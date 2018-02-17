@@ -83,10 +83,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Code\Scripts\Map.cs" />
     <Compile Include="Assets\Code\Scripts\MapGenerator.cs" />
     <Compile Include="Assets\Code\Scripts\Pathfinding\ClickableTile.cs" />
     <Compile Include="Assets\Code\Scripts\Pathfinding\Node.cs" />
-    <Compile Include="Assets\Code\Scripts\Pathfinding\TileMap.cs" />
     <Compile Include="Assets\Code\Scripts\Pathfinding\TileType.cs" />
     <Compile Include="Assets\Code\Scripts\Unit.cs" />
     <Compile Include="Assets\Code\Scripts\Utility.cs" />

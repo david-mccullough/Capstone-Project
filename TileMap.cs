@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 public class TileMap : MonoBehaviour {
-
+    
 	public GameObject selectedUnit;
     public Canvas tileCanvas;
 
@@ -22,8 +22,8 @@ public class TileMap : MonoBehaviour {
 
 	void Start() {
 		// Setup the selectedUnit's variable
-		selectedUnit.GetComponent<Unit>().tileX = (int)selectedUnit.transform.position.x;
-		selectedUnit.GetComponent<Unit>().tileY = (int)selectedUnit.transform.position.y;
+		selectedUnit.GetComponent<Unit>().myCoords.x = (int)selectedUnit.transform.position.x;
+		selectedUnit.GetComponent<Unit>().myCoords.y = (int)selectedUnit.transform.position.y;
 		selectedUnit.GetComponent<Unit>().map = this;
 
 		GenerateMapData();
@@ -62,12 +62,12 @@ public class TileMap : MonoBehaviour {
 
     public float CostToEnterTile(int sourceX, int sourceY, int targetX, int targetY) {
 
-		TileType tt = tileTypes[ tiles[targetX,targetY] ];
+		//TileType tt = tileTypes[ tiles[targetX,targetY] ];
 
 		if(UnitCanEnterTile(targetX, targetY) == false)
 			return Mathf.Infinity;
 
-		float cost = tt.movementCost;
+        float cost = 1f;//tt.movementCost;
 
 		if( sourceX!=targetX && sourceY!=targetY) {
 			// We are moving diagonally!  Fudge the cost for tie-breaking

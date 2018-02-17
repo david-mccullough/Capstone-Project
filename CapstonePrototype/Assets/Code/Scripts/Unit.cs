@@ -1,18 +1,18 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class Unit : MonoBehaviour {
 
-	// tileX and tileY represent the correct map-tile position
-	// for this piece.  Note that this doesn't necessarily mean
-	// the world-space coordinates, because our map might be scaled
-	// or offset or something of that nature.  Also, during movement
-	// animations, we are going to be somewhere in between tiles.
-	public int tileX;
-	public int tileY;
+    // myCoords represent the correct map-tile position
+    // for this piece.  Note that this doesn't necessarily mean
+    // the world-space coordinates, because our map might be scaled
+    // or offset or something of that nature.  Also, during movement
+    // animations, we are going to be somewhere in between tiles.
+    public Map.Coord myCoords;
 
-	public TileMap map;
+	public Map map;
 
 	// Our pathfinding info.  Null if we have no destination ordered.
 	public List<Node> currentPath = null;
@@ -21,9 +21,16 @@ public class Unit : MonoBehaviour {
     [SerializeField]
 	int moveSpeed = 2;
     [SerializeField]
-    float remainingMovement=2;
+    int remainingMovement=2;
 
     public GameObject uiText;
+
+    // Constructor
+    public Unit (Map m) {
+        map = m;
+
+    }
+
 
 	void Update() {
 		// Draw our debug line showing the pathfinding!
@@ -33,9 +40,9 @@ public class Unit : MonoBehaviour {
 
 			while( currNode < currentPath.Count-1 ) {
 
-				Vector3 start = map.TileCoordToWorldCoord( currentPath[currNode].x, currentPath[currNode].y ) + 
+				Vector3 start = map.TileCoordToWorldCoord( currentPath[currNode].pos ) + 
 					new Vector3(0, 0, -0.5f) ;
-				Vector3 end   = map.TileCoordToWorldCoord( currentPath[currNode+1].x, currentPath[currNode+1].y )  + 
+				Vector3 end   = map.TileCoordToWorldCoord( currentPath[currNode+1].pos )  + 
 					new Vector3(0, 0, -0.5f) ;
 
 				Debug.DrawLine(start, end, Color.red);
@@ -46,36 +53,39 @@ public class Unit : MonoBehaviour {
 
 		// Have we moved our visible piece close enough to the target tile that we can
 		// advance to the next step in our pathfinding?
-		if(Vector3.Distance(transform.position, map.TileCoordToWorldCoord( tileX, tileY )) < 0.1f)
+		if(Vector3.Distance(transform.position, map.TileCoordToWorldCoord(myCoords)) < 0.1f)
 			AdvancePathing();
 
         // Smoothly animate towards the correct map tile.
-        transform.position = Vector3.Lerp(transform.position, map.TileCoordToWorldCoord( tileX, tileY ), 5f * Time.deltaTime);
+        transform.position = Vector3.Lerp(transform.position, map.TileCoordToWorldCoord(myCoords), 5f * Time.deltaTime);
 	}
 
-	// Advances our pathfinding progress by one tile.
-	void AdvancePathing() {
+    // Advances our pathfinding progress by one tile.
+    void AdvancePathing() {
         if (currentPath == null) {
             if (remainingMovement == 0) {
             }
             return;
         }
 
-        if (remainingMovement <= 0) { 
+        if (remainingMovement <= 0) {
+            Reset();
             return;
         }
 
-		// Teleport us to our correct "current" position, in case we
-		// haven't finished the animation yet.
-		transform.position = map.TileCoordToWorldCoord( tileX, tileY );
+        // Teleport us to our correct "current" position, in case we
+        // haven't finished the animation yet.
+        transform.position = map.TileCoordToWorldCoord(myCoords);
 
         // Get cost from current tile to next tile
         remainingMovement -= 1;//map.CostToEnterTile(currentPath[0].x, currentPath[0].y, currentPath[1].x, currentPath[1].y );
-        uiText.GetComponent<Text>().text = "" + remainingMovement;
+        if (uiText != null) {
+            uiText.GetComponent<Text>().text = "" + remainingMovement;
+        }
 
         // Move us to the next tile in the sequence
-        tileX = currentPath[1].x;
-		tileY = currentPath[1].y;
+        myCoords.x = currentPath[1].pos.x;
+        myCoords.y = currentPath[1].pos.y;
 		
 		// Remove the old "current" tile from the pathfinding list
 		currentPath.RemoveAt(0);
@@ -88,6 +98,7 @@ public class Unit : MonoBehaviour {
 		}
 	}
 
+    /*
 	// The "Next Turn" button calls this.
 	public void NextTurn() {
         // Make sure to wrap-up any outstanding movement left over.
@@ -99,13 +110,37 @@ public class Unit : MonoBehaviour {
 		}
 
         // Reset our available movement points.
-        SetMoveSpeed(map.GetTileValue(tileX, tileY));
+        SetMoveSpeed(map.GetTileValue(myCoords));
         remainingMovement = moveSpeed;
 	}
+    */
 
     public void SetMoveSpeed(int value) {
         Debug.Log("moveSpeed = " + value);
         moveSpeed = value;
-        uiText.GetComponent<Text>().text = "" + value;
+        //uiText.GetComponent<Text>().text = "" + value;
+    }
+
+    public int GetRemainingMoves() {
+        return remainingMovement;
+    }
+
+    //TODO better method name
+    public void Reset() {
+        // Reset our available movement points.
+        SetMoveSpeed(map.GetTileValue(myCoords));
+        remainingMovement = moveSpeed;
+    }
+
+    void OnMouseUp() {
+        Debug.Log("Click Unit!");
+
+        if (EventSystem.current.IsPointerOverGameObject())
+            return;
+
+        map.SelectUnit(this);
+        foreach (Map.Coord tile in map.breadthFirst(map.graph[myCoords.x, myCoords.y], map.selectedUnit.GetRemainingMoves())) {
+            map.tiles[tile.x, tile.y].GetComponent<ClickableTile>().Highlight(true);
+        }
     }
 }

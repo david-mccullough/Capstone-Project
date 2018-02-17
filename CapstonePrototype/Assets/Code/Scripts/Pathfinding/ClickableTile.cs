@@ -5,10 +5,14 @@ using UnityEngine.UI;
 
 public class ClickableTile : MonoBehaviour {
 
-	public int tileX;
-	public int tileY;
-	public TileMap map;
+    public Map.Coord pos;
+	public Map map;
     public GameObject valueText;
+    
+
+    private int value = 2;
+    private bool isWalkable = true;
+    private bool isHighlighted = false;
 
 	void OnMouseUp() {
 		Debug.Log ("Click!");
@@ -16,11 +20,39 @@ public class ClickableTile : MonoBehaviour {
 		if(EventSystem.current.IsPointerOverGameObject())
 			return;
 
-		map.GeneratePathTo(tileX, tileY);
+		map.GeneratePathTo(pos);
+        map.breadthFirst(map.graph[pos.x, pos.y], 1);
 	}
 
-    public void SetValueText(int value) {
-        valueText.GetComponent<Text>().text = "" + value;
+
+    public void SetValue(int value) {
+        this.value = value;
+        //valueText.GetComponent<Text>().text = "" + value;
     }
 
+    public int GetValue() {
+        return value;
+    }
+
+    public bool IsWalkable() {
+        return isWalkable;
+    }
+
+    public void Highlight(bool boolean) {
+
+        if (boolean != isHighlighted) {
+            Renderer rend = this.gameObject.GetComponent<Renderer>();
+            if (boolean) {
+                //highlight
+                rend.enabled = false;
+            }
+            else {
+                //un-highlight
+                rend.enabled = true;
+            }
+        }
+        else {
+            return;
+        }        
+    }
 }
