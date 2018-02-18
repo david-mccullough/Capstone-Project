@@ -9,20 +9,21 @@ public class ClickableTile : MonoBehaviour {
 	public Map map;
     public GameObject valueText;
     
-
+    [SerializeField]
     private int value = 2;
     private bool isWalkable = true;
     private bool isHighlighted = false;
 
-	void OnMouseUp() {
+
+    //TODO this has been moved controller using mousecast (still need to also make it impossible to generate path to tiles out of range)
+	/*void OnMouseUp() {
 		Debug.Log ("Click!");
 
 		if(EventSystem.current.IsPointerOverGameObject())
 			return;
 
 		map.GeneratePathTo(pos);
-        map.breadthFirst(map.graph[pos.x, pos.y], 1);
-	}
+	}*/
 
 
     public void SetValue(int value) {

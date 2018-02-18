@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public class MapGenerator : MonoBehaviour {
+public class MapGenerator: MonoBehaviour {
 
     #region Variables
 
@@ -11,6 +11,7 @@ public class MapGenerator : MonoBehaviour {
 
     [Header("Global Map Settings")]
 
+    [SerializeField]
     public int mapIndex;
 
     public TileType[] tileTypes;
@@ -33,12 +34,9 @@ public class MapGenerator : MonoBehaviour {
    
     #region Main Methods
 
-    void Start() {
-        GenerateMap();
-        
-    }
 
-    public void GenerateMap() {
+
+    public Map GenerateMap() {
 
         currentMap = maps[mapIndex];
         System.Random prng = new System.Random(currentMap.seed);
@@ -81,7 +79,7 @@ public class MapGenerator : MonoBehaviour {
                 ClickableTile ct = newTile.GetComponent<ClickableTile>();
                 //ct.valueText = ui;
                 ct.pos = new Map.Coord(x, y);
-                ct.SetValue((int)Random.Range(1,currentMap.maxTileValue));
+                ct.SetValue((int)Random.Range(1,currentMap.maxTileValue+1));
                 ct.map = currentMap;
             }
         }
@@ -121,18 +119,32 @@ public class MapGenerator : MonoBehaviour {
             }
         }
 
-        // Setup the selectedUnit's variable
+        // TODO make this more robust. currently just spawns 2 player units with respective factions
+        // eventually this should step through and generate untis for all existing factions associated with match settings
+
+        // Setup the player unit
         Unit newUnit = Instantiate(unitPrefab, currentMap.TileCoordToWorldCoord(new Map.Coord(0, 0)), Quaternion.identity).GetComponent<Unit>() as Unit;
         newUnit.GetComponent<Unit>().map = currentMap;
-        currentMap.selectedUnit = newUnit;
-        //newUnit.GetComponent<Unit>().TileTo
-        currentMap.selectedUnit.GetComponent<Unit>().myCoords.x = (int)currentMap.selectedUnit.transform.position.x;
-        currentMap.selectedUnit.GetComponent<Unit>().myCoords.y = (int)currentMap.selectedUnit.transform.position.z;
-        currentMap.selectedUnit.GetComponent<Unit>().map = currentMap;
+        newUnit.myCoords.x = (int)newUnit.transform.position.x;
+        newUnit.myCoords.y = (int)newUnit.transform.position.z;
+        newUnit.map = currentMap;
         newUnit.transform.parent = mapHolder;
+        newUnit.faction = GameController.instance.factions[1];
+        newUnit.GetComponent<Renderer>().material.color = newUnit.faction.color;
+
+        // Setup the AI unit
+        newUnit = Instantiate(unitPrefab, currentMap.TileCoordToWorldCoord(new Map.Coord(currentMap.size.x-1, currentMap.size.y - 1)), Quaternion.identity).GetComponent<Unit>() as Unit;
+        newUnit.GetComponent<Unit>().map = currentMap;
+        newUnit.myCoords.x = (int)newUnit.transform.position.x;
+        newUnit.myCoords.y = (int)newUnit.transform.position.z;
+        newUnit.map = currentMap;
+        newUnit.transform.parent = mapHolder;
+        newUnit.faction = GameController.instance.factions[0];
+        newUnit.GetComponent<Renderer>().material.color = newUnit.faction.color;
 
         GeneratePathfindingGraph(currentMap);
-        //GenerateMapVisual(currentMap);         
+
+        return currentMap;
     }
 
     void GeneratePathfindingGraph(Map map) {

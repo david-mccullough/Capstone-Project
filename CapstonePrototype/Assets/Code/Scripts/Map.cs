@@ -11,8 +11,6 @@ public class Map {
     public Node[,] graph;
     public Transform[,] tiles; //tilePrefab with ClickableTile script
 
-    public Unit selectedUnit;
-
     [Range(0, 1)]
     public float obstaclePercent;
     public float minObstacleHeight;
@@ -66,7 +64,7 @@ public class Map {
 
         ClickableTile ct = tiles[target.x, target.y].GetComponent<ClickableTile>();
         int value = ct.GetValue();
-        Debug.Log("Tile value at " + target + " is " + value);
+        //Debug.Log("Tile value at " + target + " is " + value);
         return value;
 
     }
@@ -99,8 +97,15 @@ public class Map {
     }
 
     public void GeneratePathTo(Coord pos) {
+
+        Unit unit = GameController.instance.GetSelectedUnit();
+        if (unit == null) {
+            Debug.Log("Attempted to generate path for null unit.");
+            return;
+        }
+
         // Clear out our unit's old path.
-        selectedUnit.currentPath = null;
+        unit.currentPath = null;
 
         if (UnitCanEnterTile(pos) == false) {
             // We clicked on an unwalkable tile, so just quit.
@@ -115,8 +120,8 @@ public class Map {
         List<Node> unvisited = new List<Node>();
 
         Node source = graph[
-                            selectedUnit.myCoords.x,
-                            selectedUnit.myCoords.y
+                            unit.myCoords.x,
+                            unit.myCoords.y
                             ];
 
         Node target = graph[
@@ -189,7 +194,7 @@ public class Map {
 
         currentPath.Reverse();
 
-        selectedUnit.currentPath = currentPath;
+        unit.currentPath = currentPath;
     }
 
     // Flood cells from specific coord and return an array of those flooded coords
@@ -230,9 +235,11 @@ public class Map {
 
     }
 
-    public void SelectUnit(Unit u) {
-        selectedUnit = u;
-        Debug.Log("Selected new unit");
-
+    public void HighlightTiles(Coord c) {
+        foreach (Map.Coord tile in breadthFirst(graph[c.x, c.y], GameController.instance.GetSelectedUnit().GetRemainingMoves())) {
+            tiles[tile.x, tile.y].GetComponent<ClickableTile>().Highlight(true);
+        }
     }
+
+
 }
