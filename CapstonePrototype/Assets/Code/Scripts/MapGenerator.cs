@@ -34,8 +34,6 @@ public class MapGenerator: MonoBehaviour {
    
     #region Main Methods
 
-
-
     public Map GenerateMap() {
 
         currentMap = maps[mapIndex];
@@ -79,7 +77,8 @@ public class MapGenerator: MonoBehaviour {
                 ClickableTile ct = newTile.GetComponent<ClickableTile>();
                 //ct.valueText = ui;
                 ct.pos = new Map.Coord(x, y);
-                ct.SetValue((int)Random.Range(1,currentMap.maxTileValue+1));
+
+                ct.SetValue((int)prng.Next(1,currentMap.maxTileValue));
                 ct.map = currentMap;
             }
         }
@@ -130,7 +129,10 @@ public class MapGenerator: MonoBehaviour {
         newUnit.map = currentMap;
         newUnit.transform.parent = mapHolder;
         newUnit.faction = GameController.instance.factions[1];
-        newUnit.GetComponent<Renderer>().material.color = newUnit.faction.color;
+        Renderer rend = newUnit.GetComponent<Renderer>();
+        var tempMaterial = new Material(rend.sharedMaterial);
+        tempMaterial.color = newUnit.faction.color;
+        rend.sharedMaterial = tempMaterial;
 
         // Setup the AI unit
         newUnit = Instantiate(unitPrefab, currentMap.TileCoordToWorldCoord(new Map.Coord(currentMap.size.x-1, currentMap.size.y - 1)), Quaternion.identity).GetComponent<Unit>() as Unit;
@@ -140,7 +142,10 @@ public class MapGenerator: MonoBehaviour {
         newUnit.map = currentMap;
         newUnit.transform.parent = mapHolder;
         newUnit.faction = GameController.instance.factions[0];
-        newUnit.GetComponent<Renderer>().material.color = newUnit.faction.color;
+        rend = newUnit.GetComponent<Renderer>();
+        tempMaterial = new Material(rend.sharedMaterial);
+        tempMaterial.color = newUnit.faction.color;
+        rend.sharedMaterial = tempMaterial;
 
         GeneratePathfindingGraph(currentMap);
 
@@ -202,8 +207,28 @@ public class MapGenerator: MonoBehaviour {
 
                 // This also works with 6-way hexes and n-way variable areas (like EU4)
                 #endregion
+
+                
             }
         }
+        /*
+        string temp = "";
+        for (int xx = 0; xx < currentMap.size.x; xx++) {
+            for (int yy = 0; yy < currentMap.size.y; yy++) {
+                if (currentMap.GetCircleCells(new Map.Coord(xx, yy), new Map.Coord(4, 4), 2, true)) {
+                    temp += "[" + ":"
+                   //currentMap.Distance(currentMap.graph[0, 0].pos, currentMap.graph[xx, yy].pos)
+                   //currentMap.GetTileValue(new Map.Coord(xx,yy))
+                   //currentMap.CheckOnCircle(new Map.Coord(xx,yy), new Map.Coord(4,4), 2, false)
+                   + "] ";
+                }
+                else {
+                    temp += "[ ] ";
+                }
+            }
+            temp += "\n";
+        }
+        Debug.Log(temp);*/
     }
 
 

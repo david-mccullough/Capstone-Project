@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class Unit : MonoBehaviour {
@@ -17,25 +16,26 @@ public class Unit : MonoBehaviour {
     // Our pathfinding info.  Null if we have no destination ordered.
     public List<Node> currentPath = null;
 
-	// How far this unit can move in one turn. Note that some tiles cost extra.
+	// How far this unit can move in one turn
     [SerializeField]
 	int moveSpeed = 2;
     int remainingMovement=2;
     bool isReadyToAdvance = true;
     Map.Coord turnStartPos;
 
-    public GameObject uiText;
+    // Declare Delegates
+    public delegate void PathCompleteDelegate();
+    public delegate void TurnCompleteDelegate();
 
-    // Constructor TODO needed?
-    /*public Unit (Map m, Faction fac) {
-        map = m;
-        faction = fac;
-    }*/
+    // Create event delegate instances
+    public event PathCompleteDelegate pathCompleteEvent;
+    public event TurnCompleteDelegate turnCompleteEvent;
 
-    void Awake() {
-
+    void Start() {
 
         turnStartPos = myCoords;
+        SetMoveSpeed(map.GetTileValue(myCoords));
+        remainingMovement = moveSpeed;
     }
 
 	void Update() {
@@ -77,24 +77,18 @@ public class Unit : MonoBehaviour {
             return;
         }
 
-        if (currentPath == null) {
+        if (currentPath == null || currentPath.Count <= 1) {
             return;
         }
-
 
         // Teleport us to our correct "current" position, in case we
         // haven't finished the animation yet.
         transform.position = map.TileCoordToWorldCoord(myCoords);
 
-        // Get cost from current tile to next tile
-        remainingMovement -= 1;//map.CostToEnterTile(currentPath[0].x, currentPath[0].y, currentPath[1].x, currentPath[1].y );
-        foreach (Node n in currentPath) {
-            Debug.Log(remainingMovement + " on tile " + currentPath[0].pos + ". Path is: " + n.pos);
-        }
-        if (uiText != null) {
-            uiText.GetComponent<Text>().text = "" + remainingMovement;
-        }
+        //Debug.Log(remainingMovement + " on tile " + currentPath[0].pos + ". Moving to " + currentPath[1].pos);
 
+        // Subtract cost from current tile to next tile
+        remainingMovement -= 1;
 
         // Move us to the next tile in the sequence
         myCoords.x = currentPath[1].pos.x;
@@ -103,13 +97,19 @@ public class Unit : MonoBehaviour {
 		// Remove the old "current" tile from the pathfinding list
 		currentPath.RemoveAt(0);
 
-		
-		if(currentPath.Count == 1) {
+
+        if (currentPath.Count == 1) {
             // We only have one tile left in the path, and that tile MUST be our ultimate
             // destination -- and we are standing on it!
-            // So just reset
+
+            // Unit arrived at destination. Sending out event message!
+            if (pathCompleteEvent != null) {
+                pathCompleteEvent();
+            }
+            
+            // We are at our destinationa and we are out of moves, so end our turn
             if (remainingMovement <= 0) {
-                Debug.Log("No more path.");
+                Debug.Log("Unit out of path and moves! Ending turn.");
                 FinishTurn();
             }
 		}
@@ -124,10 +124,17 @@ public class Unit : MonoBehaviour {
         SetMoveSpeed(map.GetTileValue(myCoords));
         remainingMovement = moveSpeed;
         turnStartPos = myCoords;
-        GameController.instance.NextTurn();
+
+        // Send out event message that our turn is complete
+        if (turnCompleteEvent != null) {
+            turnCompleteEvent();
+        }
+        //GameController.instance.NextTurn(); ////replaced by event
     }
 
-    public void ForceFinishTurn() {
+    // TODO maybe remove? ForcePathCompletion() never gets called.
+    public void ForcePathCompletion() {
+        Debug.Log("Forced finish.");
         // Make sure to wrap-up any outstanding movement left over.
         if (remainingMovement > 0)
             return;
@@ -143,7 +150,6 @@ public class Unit : MonoBehaviour {
     }
 
     public void SetMoveSpeed(int value) {
-        Debug.Log("moveSpeed = " + value + "\nremaining = " + value);
         moveSpeed = value;
         //uiText.GetComponent<Text>().text = "" + value;
     }
