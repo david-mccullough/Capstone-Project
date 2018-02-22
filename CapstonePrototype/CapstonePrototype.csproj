@@ -83,11 +83,11 @@
   <ItemGroup>
     <Compile Include="Assets\Code\Scripts\GameController.cs" />
     <Compile Include="Assets\Code\Scripts\GameUI.cs" />
-    <Compile Include="Assets\Code\Scripts\Map.cs" />
-    <Compile Include="Assets\Code\Scripts\MapGenerator.cs" />
-    <Compile Include="Assets\Code\Scripts\Pathfinding\ClickableTile.cs" />
-    <Compile Include="Assets\Code\Scripts\Pathfinding\Node.cs" />
-    <Compile Include="Assets\Code\Scripts\Pathfinding\TileType.cs" />
+    <Compile Include="Assets\Code\Scripts\Map\ClickableTile.cs" />
+    <Compile Include="Assets\Code\Scripts\Map\Map.cs" />
+    <Compile Include="Assets\Code\Scripts\Map\MapGenerator.cs" />
+    <Compile Include="Assets\Code\Scripts\Map\Node.cs" />
+    <Compile Include="Assets\Code\Scripts\Map\TileType.cs" />
     <Compile Include="Assets\Code\Scripts\Unit.cs" />
     <Compile Include="Assets\Code\Scripts\Utility.cs" />
   </ItemGroup>

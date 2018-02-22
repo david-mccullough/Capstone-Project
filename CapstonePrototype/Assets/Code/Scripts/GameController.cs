@@ -4,9 +4,9 @@ using UnityEngine.UI;
 
 public class GameController : MonoBehaviour {
 
-    public static GameController instance = null;
-    public Faction[] factions;
-    public Unit[] allUnits;
+    public static Faction[] factions;
+    public Faction[] activeFactions;
+    public Unit[] allUnits; //TODO could we just access units in our faction array?
     private Faction currentFaction;
     private Unit selectedUnit;
 
@@ -23,18 +23,6 @@ public class GameController : MonoBehaviour {
 
 
     void Awake() {
-
-        // Enforce singleton pattern for GameController
-        // Check if instance already exists
-        if (instance == null) {
-            instance = this;
-        }
-        else if (instance != this) {
-            Destroy(gameObject);
-        }
-
-        //Sets this to not be destroyed when reloading scene
-        DontDestroyOnLoad(gameObject);
                 
         InitGame();
 
@@ -51,8 +39,8 @@ public class GameController : MonoBehaviour {
     void InitGame() {
 
         mapGen = GetComponent<MapGenerator>();
-        map = mapGen.GenerateMap();
-        currentFaction = factions[turnIndex];
+        map = mapGen.GenerateMap(activeFactions);
+        currentFaction = activeFactions[turnIndex];
         uiText.text = currentFaction.name + " turn (" + turnIndex + ").";
 
         ui = FindObjectOfType<GameUI>();
@@ -70,10 +58,10 @@ public class GameController : MonoBehaviour {
 
         // Ensure we cycle back to start of factions
         turnIndex++;
-        int maxIndex = factions.Length;
+        int maxIndex = activeFactions.Length;
         turnIndex = turnIndex % maxIndex;
 
-        currentFaction = factions[turnIndex];
+        currentFaction = activeFactions[turnIndex];
         uiText.text = currentFaction.name + " turn (" + turnIndex + ").";
         return currentFaction;
     }
@@ -88,22 +76,6 @@ public class GameController : MonoBehaviour {
         }
     }
 
-    #region Accessors and Mutators
-
-    public Unit GetSelectedUnit() {
-        return selectedUnit;
-    }
-
-    #endregion
-
-    #region Helper Functions
-
-    bool MouseCast(out RaycastHit hit) {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-
-        return Physics.Raycast(ray, out hit, 9999f);
-    }
-
     void CheckForSelection() {
         if (Input.GetButtonDown("Fire1")) {
             RaycastHit hit;
@@ -112,7 +84,7 @@ public class GameController : MonoBehaviour {
                 if (hit.transform.tag == "Tile") {
                     ClickableTile tile = hit.transform.GetComponent<ClickableTile>();
                     if (tile.IsAvailable()) {
-                        map.GeneratePathTo(tile.pos);
+                        selectedUnit.currentPath = map.GeneratePathTo(selectedUnit.pos, tile.pos);
                     }
                 }
                 else if (hit.transform.tag == "Unit") {
@@ -135,11 +107,28 @@ public class GameController : MonoBehaviour {
                 // hold refernece for current unit
                 selectedUnit = u;
                 // Get the frontier of available move options...
-                Map.Coord[] coordOptions = u.GetAvailableTileOptions(map.graph[u.myCoords.x,u.myCoords.y], u.GetRemainingMoves()).ToArray();
+                Map.Coord[] coordOptions = u.GetAvailableTileOptions(map.graph[u.pos.x, u.pos.y], u.GetRemainingMoves()).ToArray();
                 // ...and make those tiles walkable
                 map.MakeTilesAvailable(coordOptions);
             }
         }
+    }
+
+
+    #region Accessors and Mutators
+
+    public Unit GetSelectedUnit() {
+        return selectedUnit;
+    }
+
+    #endregion
+
+    #region Helper Functions
+
+    bool MouseCast(out RaycastHit hit) {
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+        return Physics.Raycast(ray, out hit, 9999f);
     }
 
     void DeselectUnit() {
@@ -160,32 +149,32 @@ public struct Faction {
     public string name;
     public Color color;
     private List<Unit> myUnits;
-    private int minUnits;
-    private int maxUnits;
+    private int startingNumUnits;
+    private int numActiveUnits;
     
-
-    public Faction(string name, Color color) {
-        this.name = name;
-        this.color = color;
-        this.minUnits = 1;
-        this.maxUnits = 1;
-        myUnits = new List<Unit>();
+    public Faction(string name)
+        : this(name, Color.black, 1) {
     }
 
-    public Faction(string name, Color color, int maxUnits, int minUnits) {
+    public Faction(string name, Color color, int numUnits) {
         this.name = name;
         this.color = color;
-        this.minUnits = 1;
-        this.maxUnits = 1;
+        this.startingNumUnits = numUnits;
+        this.numActiveUnits = numUnits;
         myUnits = new List<Unit>();
     }
 
     public void AddUnit(Unit unit) {
         myUnits.Add(unit);
+        numActiveUnits++;
     }
 
     public Unit[] GetUnits() {
         return myUnits.ToArray();
+    }
+
+    public int GetStartingNumUnits() {
+        return startingNumUnits;
     }
 
     public static bool operator ==(Faction f1, Faction f2) {

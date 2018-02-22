@@ -4,12 +4,12 @@ using UnityEngine.UI;
 
 public class Unit : MonoBehaviour {
 
-    // myCoords represent the correct map-tile position
+    // pos represent the correct map-tile position
     // for this unit. Note that this doesn't necessarily mean
     // the world-space coordinates, because our map might be scaled
     // and during movement animations, we are going to be
     // somewhere in between tiles.
-    public Map.Coord myCoords;
+    public Map.Coord pos;
 	public Map map;
     public Faction faction;
 
@@ -33,9 +33,23 @@ public class Unit : MonoBehaviour {
 
     void Start() {
 
-        turnStartPos = myCoords;
-        SetMoveSpeed(map.GetTileValue(myCoords));
+        turnStartPos = pos;
+        SetMoveSpeed(map.GetTileValue(pos));
         remainingMovement = moveSpeed;
+    }
+
+    public void Init(Map map, Map.Coord pos, Faction faction) {
+        this.map = map;
+        this.pos = pos;
+        this.faction = faction;
+
+        pos.x = (int)transform.position.x;
+        pos.y = (int)transform.position.z;
+        
+        Renderer rend = GetComponent<Renderer>();
+        Material tempMaterial = new Material(rend.sharedMaterial);
+        tempMaterial.color = faction.color;
+        rend.sharedMaterial = tempMaterial;
     }
 
 	void Update() {
@@ -67,7 +81,7 @@ public class Unit : MonoBehaviour {
         }
 
         // Smoothly animate towards the correct map tile.
-        transform.position = Vector3.Lerp(transform.position, map.TileCoordToWorldCoord(myCoords), 5f * Time.deltaTime);
+        transform.position = Vector3.Lerp(transform.position, map.TileCoordToWorldCoord(pos), 5f * Time.deltaTime);
 	}
 
     public List<Map.Coord> GetAvailableTileOptions(Node pos, int distance) {
@@ -107,7 +121,7 @@ public class Unit : MonoBehaviour {
 
         // Teleport us to our correct "current" position, in case we
         // haven't finished the animation yet.
-        transform.position = map.TileCoordToWorldCoord(myCoords);
+        transform.position = map.TileCoordToWorldCoord(pos);
 
         //Debug.Log(remainingMovement + " on tile " + currentPath[0].pos + ". Moving to " + currentPath[1].pos);
 
@@ -115,8 +129,8 @@ public class Unit : MonoBehaviour {
         remainingMovement -= 1;
 
         // Move us to the next tile in the sequence
-        myCoords.x = currentPath[1].pos.x;
-        myCoords.y = currentPath[1].pos.y;
+        pos.x = currentPath[1].pos.x;
+        pos.y = currentPath[1].pos.y;
 		
 		// Remove the old "current" tile from the pathfinding list
 		currentPath.RemoveAt(0);
@@ -145,15 +159,14 @@ public class Unit : MonoBehaviour {
         currentPath = null;
 
         // Reset our available movement points.
-        SetMoveSpeed(map.GetTileValue(myCoords));
+        SetMoveSpeed(map.GetTileValue(pos));
         remainingMovement = moveSpeed;
-        turnStartPos = myCoords;
+        turnStartPos = pos;
 
         // Send out event message that our turn is complete
         if (turnCompleteEvent != null) {
             turnCompleteEvent();
         }
-        //GameController.instance.NextTurn(); ////replaced by event
     }
 
     // TODO maybe remove? ForcePathCompletion() never gets called?

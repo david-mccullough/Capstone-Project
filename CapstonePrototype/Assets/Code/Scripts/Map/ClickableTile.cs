@@ -31,18 +31,21 @@ public class ClickableTile : MonoBehaviour {
     }
 
     public void SetAvailability(bool boolean) {
-
         if (!boolean) {
             isAvailable = false;
             Highlight(false);
         }
         else if (!isAvailable) {
-            //make available if walkable!
+            // Check if there other reasons we shoudnt be made available
             if (isWalkable) {
                 isAvailable = true;
                 Highlight(true);
             }
         }
+    }
+
+    public void SetWalkability(bool boolean) {
+        isWalkable = boolean;
     }
 
     public void Highlight(bool boolean) {

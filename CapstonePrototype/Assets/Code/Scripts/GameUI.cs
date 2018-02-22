@@ -15,15 +15,14 @@ public class GameUI : MonoBehaviour {
     [Header("Prefabs")]
     public GameObject[] prefabs;
 
-    //private GameController controller = GameController.instance;
-
     public void InitUI() {
 
         // Unit pin points
-        foreach (Unit u in GameController.instance.allUnits) {
+        /*foreach (Unit u in GameController.instance.allUnits) {
             Vector3 uPos = u.transform.position;
             //Instantiate(prefabs[(int)UIPrefabs.unitPin], new Vector3 (uPos.x, uPos.y+0.5f, uPos.z), Quaternion.identity, worldCanvas.transform);
-        }
+        }*/
 	}
+
 	
 }

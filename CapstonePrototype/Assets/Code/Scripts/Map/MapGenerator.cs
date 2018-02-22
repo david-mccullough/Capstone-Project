@@ -1,7 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
-
 
 public class MapGenerator: MonoBehaviour {
 
@@ -12,10 +10,11 @@ public class MapGenerator: MonoBehaviour {
     [Header("Global Map Settings")]
 
     [SerializeField]
-    public int mapIndex;
+    private int mapIndex;
 
     public TileType[] tileTypes;
 
+    // Prefabs
     public Transform tilePrefab;
     public Transform obstaclePrefab;
     public Transform unitPrefab;
@@ -24,22 +23,20 @@ public class MapGenerator: MonoBehaviour {
     public float outlinePercent;
     public float tileSize;
 
-    List<Map.Coord> allTileCoords;
-    Queue<Map.Coord> shuffledTileCoords;
+    private List<Map.Coord> allTileCoords;
+    private Queue<Map.Coord> shuffledTileCoords;
 
-    Map currentMap;
+    private Map currentMap;
 
     #endregion
 
    
     #region Main Methods
 
-    public Map GenerateMap() {
+    public Map GenerateMap(Faction[] factions) {
 
         currentMap = maps[mapIndex];
         System.Random prng = new System.Random(currentMap.seed);
-
-        Debug.Log("Map dimensions: " + currentMap.size);
 
         currentMap.tiles = new Transform[currentMap.size.x, currentMap.size.y];
 
@@ -50,6 +47,13 @@ public class MapGenerator: MonoBehaviour {
             }
         }
         shuffledTileCoords = new Queue<Map.Coord>(Utility.ShuffleArray(allTileCoords.ToArray(), currentMap.seed));
+
+        //Get corners (will be where we spawn units)
+        List<Map.Coord> corners = new List<Map.Coord>();
+        corners.Add(new Map.Coord(0, 0));
+        corners.Add(new Map.Coord(currentMap.size.x-1, currentMap.size.y-1));
+        corners.Add(new Map.Coord(currentMap.size.x-1, 0));
+        corners.Add(new Map.Coord(0, currentMap.size.y-1));
 
         // Create GenreratedMap GO to hold tiles
         string holderName = "GeneratedMap";
@@ -94,7 +98,8 @@ public class MapGenerator: MonoBehaviour {
             obstacleMap[randomCoord.x, randomCoord.y] = true;
             currentObstacleCount++;
 
-            if (randomCoord != currentMap.center && MapIsFloodable(obstacleMap, currentObstacleCount)) {
+            if (randomCoord != currentMap.Center && MapIsFloodable(obstacleMap, currentObstacleCount)
+                && !corners.Contains(randomCoord)) {
                 float obstacleHeight = Mathf.Lerp(currentMap.minObstacleHeight, currentMap.maxObstacleHeight, (float)prng.NextDouble());
                 Vector3 obstaclePosition = CoordToPostiion(randomCoord.x, randomCoord.y);
                 // instantiate obstacle
@@ -102,6 +107,9 @@ public class MapGenerator: MonoBehaviour {
                 newObstacle.localScale = new Vector3(tileSize, obstacleHeight, tileSize);
                 newObstacle.transform.position = new Vector3(newObstacle.transform.position.x, obstacleHeight / 2 + 0.5f, newObstacle.transform.position.z);
                 newObstacle.localScale = new Vector3((1 - outlinePercent) * tileSize, obstacleHeight, (1 - outlinePercent) * tileSize);
+
+                // make tiles that obstacles occupy unwalkable
+                currentMap.tiles[randomCoord.x, randomCoord.y].GetComponent<ClickableTile>().SetWalkability(false);
 
                 //adjust color
                 Renderer obstacleRenderer = newObstacle.GetComponent<Renderer>();
@@ -118,42 +126,23 @@ public class MapGenerator: MonoBehaviour {
             }
         }
 
-        // TODO make this more robust. currently just spawns 2 player units with respective factions
-        // eventually this should step through and generate untis for all existing factions associated with match settings
+        // Create units for each active faction, initialize them, and set its parent to the mapHolder
+        Map.Coord origin; //this will tell us which quadrant to spawn each faction's units
 
-        // get list of participating factions
+        // step trough our list of factions
+        for (int i = 0; i < factions.Length; i++) {
 
-        // find outhow many units for each faction should be spawned
+            // determine quadrant
+            origin = corners[i];
 
-        // set up regions were each faction will spawn? 4 quadrants?
+            //for (int n = 0; n <= factions[i].GetStartingNumUnits(); n++) { TODO multiple units. for now just stick to ine for simplicity's sake
 
-        // spawn 'em, create references
-
-        // Setup the player unit
-        Unit newUnit = Instantiate(unitPrefab, currentMap.TileCoordToWorldCoord(new Map.Coord(0, 0)), Quaternion.identity).GetComponent<Unit>() as Unit;
-        newUnit.GetComponent<Unit>().map = currentMap;
-        newUnit.myCoords.x = (int)newUnit.transform.position.x;
-        newUnit.myCoords.y = (int)newUnit.transform.position.z;
-        newUnit.map = currentMap;
-        newUnit.transform.parent = mapHolder;
-        newUnit.faction = GameController.instance.factions[1];
-        Renderer rend = newUnit.GetComponent<Renderer>();
-        var tempMaterial = new Material(rend.sharedMaterial);
-        tempMaterial.color = newUnit.faction.color;
-        rend.sharedMaterial = tempMaterial;
-
-        // Setup the AI unit
-        newUnit = Instantiate(unitPrefab, currentMap.TileCoordToWorldCoord(new Map.Coord(currentMap.size.x-1, currentMap.size.y - 1)), Quaternion.identity).GetComponent<Unit>() as Unit;
-        newUnit.GetComponent<Unit>().map = currentMap;
-        newUnit.myCoords.x = (int)newUnit.transform.position.x;
-        newUnit.myCoords.y = (int)newUnit.transform.position.z;
-        newUnit.map = currentMap;
-        newUnit.transform.parent = mapHolder;
-        newUnit.faction = GameController.instance.factions[0];
-        rend = newUnit.GetComponent<Renderer>();
-        tempMaterial = new Material(rend.sharedMaterial);
-        tempMaterial.color = newUnit.faction.color;
-        rend.sharedMaterial = tempMaterial;
+            Unit newUnit = Instantiate(unitPrefab, currentMap.TileCoordToWorldCoord(origin), Quaternion.identity).GetComponent<Unit>() as Unit;
+            if (newUnit != null) {
+                newUnit.Init(currentMap, origin, factions[i]);
+                newUnit.transform.parent = mapHolder;
+            }
+        }
 
         GeneratePathfindingGraph(currentMap);
 
@@ -187,7 +176,8 @@ public class MapGenerator: MonoBehaviour {
                 if (y < map.size.y - 1)
                     map.graph[x, y].neighbours.Add(map.graph[x, y + 1]);
 
-                #region// This is the 8-way connection version (allows diagonal movement)
+                #region other grid types
+                // This is the 8-way connection version (allows diagonal movement)
                 // Try left
                 /*              if(x > 0) {
                                     graph[x,y].neighbours.Add( graph[x-1, y] );
@@ -216,49 +206,12 @@ public class MapGenerator: MonoBehaviour {
                 // This also works with 6-way hexes and n-way variable areas (like EU4)
                 #endregion
 
-                
             }
         }
-        /*
-        string temp = "";
-        for (int xx = 0; xx < currentMap.size.x; xx++) {
-            for (int yy = 0; yy < currentMap.size.y; yy++) {
-                if (currentMap.GetCircleCells(new Map.Coord(xx, yy), new Map.Coord(4, 4), 2, true)) {
-                    temp += "[" + ":"
-                   //currentMap.Distance(currentMap.graph[0, 0].pos, currentMap.graph[xx, yy].pos)
-                   //currentMap.GetTileValue(new Map.Coord(xx,yy))
-                   //currentMap.CheckOnCircle(new Map.Coord(xx,yy), new Map.Coord(4,4), 2, false)
-                   + "] ";
-                }
-                else {
-                    temp += "[ ] ";
-                }
-            }
-            temp += "\n";
-        }
-        Debug.Log(temp);*/
     }
 
-
-
-    //void GenerateMapVisual(Map map) {
-    //    for (int x = 0; x < map.size.x; x++) {
-    //        for (int y = 0; y < map.size.y; y++) {
-    //            //TileType tt = tileTypes[tiles[x, y]];
-    //            //GameObject go = (GameObject)Instantiate(tt.tileVisualPrefab, new Vector3(x, y, 0), Quaternion.identity);
-    //            //GameObject ui = Instantiate(tt.tileUIPrefab, new Vector3(x, y, -0.51f), Quaternion.identity, tileCanvas.transform);
-
-    //            ClickableTile ct = go.GetComponent<ClickableTile>();
-    //            ct.valueText = ui;
-    //            ct.tileX = x;
-    //            ct.tileY = y;
-    //            ct.SetValueText(tiles[x, y]);
-    //            ct.map = this;
-    //        }
-    //    }
-    //}
-
     #endregion
+
 
     #region Helper Methods
 
@@ -283,8 +236,8 @@ public class MapGenerator: MonoBehaviour {
         bool[,] visitedNeighbors = new bool[obstacleMap.GetLength(0), obstacleMap.GetLength(1)];
         Queue<Map.Coord> queue = new Queue<Map.Coord>();
         //Basis: mapCenter is empty
-        queue.Enqueue(currentMap.center);
-        visitedNeighbors[currentMap.center.x, currentMap.center.y] = true;
+        queue.Enqueue(currentMap.Center);
+        visitedNeighbors[currentMap.Center.x, currentMap.Center.y] = true;
         int accessibleTileCount = 1;
 
         Map.Coord[] neighborOffsets = {

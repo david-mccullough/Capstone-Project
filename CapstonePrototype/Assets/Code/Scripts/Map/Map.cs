@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 [System.Serializable]
 public class Map {
@@ -49,7 +50,7 @@ public class Map {
 
     #endregion
 
-    public Coord center {
+    public Coord Center {
         get {
             return new Coord((int)size.x / 2, (int)size.y / 2);
         }
@@ -68,7 +69,7 @@ public class Map {
 
     }
 
-    public float CostToEnterTile(Coord source, Coord target) {
+    public float CostToEnterTile(Coord start, Coord target) {
 
         //TileType tt = tileTypes[ tiles[targetX,targetY] ];
 
@@ -77,7 +78,7 @@ public class Map {
 
         float cost = 1f;//tt.movementCost;
 
-        if (source.x != target.x && source.y != target.y) {
+        if (start.x != target.x && start.y != target.y) {
             // We are moving diagonally!  Fudge the cost for tie-breaking
             // Purely a cosmetic thing!
             cost += 0.001f;
@@ -95,9 +96,9 @@ public class Map {
         return tiles[pos.x, pos.y].GetComponent<ClickableTile>().IsWalkable();
     }
 
-    public void GeneratePathTo(Coord pos) {
-
-        Unit unit = GameController.instance.GetSelectedUnit();
+    public List<Node> GeneratePathTo(Coord start, Coord pos) {
+        List<Node> currentPath = new List<Node>(0);
+        /*Unit unit = GameController.instance.GetSelectedUnit();
         if (unit == null) {
             Debug.Log("Attempted to generate path for null unit.");
             return;
@@ -105,11 +106,11 @@ public class Map {
 
         // Clear out our unit's old path.
         unit.currentPath = null;
-
+        */
         if (UnitCanEnterTile(pos) == false) {
             // We clicked on an unwalkable tile, so just quit.
             Debug.Log("Unable to create path to " + pos);
-            return;
+            return currentPath;
         }
 
         Dictionary<Node, float> dist = new Dictionary<Node, float>();
@@ -119,8 +120,8 @@ public class Map {
         List<Node> unvisited = new List<Node>();
 
         Node source = graph[
-                            unit.myCoords.x,
-                            unit.myCoords.y
+                            start.x,
+                            start.y
                             ];
 
         Node target = graph[
@@ -175,10 +176,8 @@ public class Map {
 
         if (prev[target] == null) {
             // No route between our target and the source
-            return;
+            return currentPath;
         }
-
-        List<Node> currentPath = new List<Node>();
 
         Node curr = target;
 
@@ -193,7 +192,7 @@ public class Map {
 
         currentPath.Reverse();
 
-        unit.currentPath = currentPath;
+        return currentPath;
     }
 
     // Flood cells from specific coord and return an array of those flooded coords
@@ -215,9 +214,15 @@ public class Map {
         while (nodeQueue.Count > 0) {
             Node current = nodeQueue.Dequeue();
 
-                nodes.Add(current.pos);
+                
+                    nodes.Add(current.pos);
 
-            nextElementsToDepthIncrease += current.neighbours.Count;
+            foreach (Node child in current.neighbours) {
+                if (tiles[current.pos.x, current.pos.y].GetComponent<ClickableTile>().IsWalkable()) {
+                    nextElementsToDepthIncrease++;
+                }
+            }
+
             if (--elementsToDepthIncrease == 0) {
                 if (++currentDepth > maxDepth) {
                     return nodes;
@@ -227,7 +232,9 @@ public class Map {
             }
 
             foreach (Node child in current.neighbours) {
-                nodeQueue.Enqueue(child);
+                if (tiles[current.pos.x, current.pos.y].GetComponent<ClickableTile>().IsWalkable()) {
+                    nodeQueue.Enqueue(child);
+                }
             }
         }
         
