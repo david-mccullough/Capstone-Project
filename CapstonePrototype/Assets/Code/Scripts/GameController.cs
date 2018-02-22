@@ -83,10 +83,8 @@ public class GameController : MonoBehaviour {
         // we must either yield control the next faction's turn
         // or update the current unit (actaully just deselect it for expediency sake)
         if (true) {
+            DeselectUnit();
             NextFaction();
-        }
-        foreach (Transform tile in map.tiles) {
-            tile.GetComponent<ClickableTile>().SetAvailability(false);
         }
     }
 
@@ -137,7 +135,7 @@ public class GameController : MonoBehaviour {
                 // hold refernece for current unit
                 selectedUnit = u;
                 // Get the frontier of available move options...
-                Map.Coord[] coordOptions = map.GetCircleCells(u.myCoords, u.GetRemainingMoves(), false).ToArray();
+                Map.Coord[] coordOptions = u.GetAvailableTileOptions(map.graph[u.myCoords.x,u.myCoords.y], u.GetRemainingMoves()).ToArray();
                 // ...and make those tiles walkable
                 map.MakeTilesAvailable(coordOptions);
             }
@@ -145,6 +143,7 @@ public class GameController : MonoBehaviour {
     }
 
     void DeselectUnit() {
+        map.ResetTileAvailability();
         selectedUnit = null;
     }
 

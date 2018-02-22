@@ -362,6 +362,12 @@ public class Map {
         }
     }
 
+    public void ResetTileAvailability() {
+        foreach (Transform tile in tiles) {
+            tile.GetComponent<ClickableTile>().SetAvailability(false);
+        }
+    }
+
     public int Distance(Coord c1, Coord c2) {
         return (int)System.Math.Sqrt((c1.x - c2.x)* (c1.x - c2.x) + (c1.y - c2.y)* (c1.y - c2.y));
     }

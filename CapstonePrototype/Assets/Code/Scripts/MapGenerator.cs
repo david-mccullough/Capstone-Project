@@ -121,6 +121,14 @@ public class MapGenerator: MonoBehaviour {
         // TODO make this more robust. currently just spawns 2 player units with respective factions
         // eventually this should step through and generate untis for all existing factions associated with match settings
 
+        // get list of participating factions
+
+        // find outhow many units for each faction should be spawned
+
+        // set up regions were each faction will spawn? 4 quadrants?
+
+        // spawn 'em, create references
+
         // Setup the player unit
         Unit newUnit = Instantiate(unitPrefab, currentMap.TileCoordToWorldCoord(new Map.Coord(0, 0)), Quaternion.identity).GetComponent<Unit>() as Unit;
         newUnit.GetComponent<Unit>().map = currentMap;

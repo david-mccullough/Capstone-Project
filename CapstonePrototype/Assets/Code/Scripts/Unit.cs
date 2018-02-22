@@ -70,6 +70,30 @@ public class Unit : MonoBehaviour {
         transform.position = Vector3.Lerp(transform.position, map.TileCoordToWorldCoord(myCoords), 5f * Time.deltaTime);
 	}
 
+    public List<Map.Coord> GetAvailableTileOptions(Node pos, int distance) {
+        // This is pretty inefficent... doing BFS twice and subtracting one from the other
+        // to get the outer ring of available node coords
+        HashSet<Map.Coord> outer = new HashSet<Map.Coord>(map.BreadthFirst(pos, distance));
+        List<Map.Coord> inner = map.BreadthFirst(pos, distance - 1);
+
+        var C = outer.Subtract(inner);
+
+        //step through inner nodes, remove them from outer node list
+        /*for (int i = 0; i < inner.Count; i++) {
+
+            if (outer.Contains(inner.)) {
+                Debug.Log("Found match: " + inner[i]);
+                outer.Remove(inner[i]);
+            }
+        }*/
+        foreach (Map.Coord c in C) {
+            Debug.Log(c);
+        }
+
+        return new List<Map.Coord>(C);
+    } 
+
+
     // Advances our pathfinding progress by one tile.
     void AdvancePathing() {
 
@@ -132,7 +156,7 @@ public class Unit : MonoBehaviour {
         //GameController.instance.NextTurn(); ////replaced by event
     }
 
-    // TODO maybe remove? ForcePathCompletion() never gets called.
+    // TODO maybe remove? ForcePathCompletion() never gets called?
     public void ForcePathCompletion() {
         Debug.Log("Forced finish.");
         // Make sure to wrap-up any outstanding movement left over.

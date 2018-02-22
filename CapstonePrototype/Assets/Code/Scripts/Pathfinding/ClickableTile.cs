@@ -13,18 +13,6 @@ public class ClickableTile : MonoBehaviour {
     private bool isAvailable = false;
     private bool isHighlighted = false;
 
-
-    //TODO this has been moved controller using mousecast (still need to also make it impossible to generate path to tiles out of range)
-	/*void OnMouseUp() {
-		Debug.Log ("Click!");
-
-		if(EventSystem.current.IsPointerOverGameObject())
-			return;
-
-		map.GeneratePathTo(pos);
-	}*/
-
-
     public void SetValue(int value) {
         this.value = value;
         //valueText.GetComponent<Text>().text = "" + value;
