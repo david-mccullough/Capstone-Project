@@ -56,8 +56,8 @@ public class Map {
         }
     }
 
-    public Vector3 TileCoordToWorldCoord(Coord c) {
-        return new Vector3(c.x, 1.5f, c.y);
+    public Vector3 TileCoordToWorldCoord(Coord c, float y) {
+        return new Vector3(c.x, y, c.y);
     }
 
     public int GetTileValue(Coord target) {
@@ -69,11 +69,11 @@ public class Map {
 
     }
 
-    public float CostToEnterTile(Coord start, Coord target) {
+    public float CostToEnterTile(Coord start, Coord target, Unit u) {
 
         //TileType tt = tileTypes[ tiles[targetX,targetY] ];
 
-        if (UnitCanEnterTile(target) == false)
+        if (UnitCanEnterTile(target, u) == false)
             return Mathf.Infinity;
 
         float cost = 1f;//tt.movementCost;
@@ -88,15 +88,21 @@ public class Map {
 
     }
 
-    public bool UnitCanEnterTile(Coord pos) {
+    public bool UnitCanEnterTile(Coord pos, Unit u) {
 
         // We could test the unit's walk/hover/fly type against various
         // terrain flags here to see if they are allowed to enter the tile.
+        bool canEnter = true;
+        var targetTile = tiles[pos.x, pos.y].GetComponent<ClickableTile>();
+        string ownerName = targetTile.GetOwner().name;
+        canEnter = (targetTile.IsWalkable()
+                    && !targetTile.IsOccupied()
+                    && (ownerName == u.faction.name || ownerName == "NULL"));
 
-        return tiles[pos.x, pos.y].GetComponent<ClickableTile>().IsWalkable();
+        return canEnter;
     }
 
-    public List<Node> GeneratePathTo(Coord start, Coord pos) {
+    public List<Node> GeneratePathTo(Coord start, Coord pos, Unit unit) {
         List<Node> currentPath = new List<Node>(0);
         /*Unit unit = GameController.instance.GetSelectedUnit();
         if (unit == null) {
@@ -107,7 +113,7 @@ public class Map {
         // Clear out our unit's old path.
         unit.currentPath = null;
         */
-        if (UnitCanEnterTile(pos) == false) {
+        if (UnitCanEnterTile(pos, unit) == false) {
             // We clicked on an unwalkable tile, so just quit.
             Debug.Log("Unable to create path to " + pos);
             return currentPath;
@@ -163,7 +169,7 @@ public class Map {
 
             foreach (Node v in u.neighbours) {
                 //float alt = dist[u] + u.DistanceTo(v);
-                float alt = dist[u] + CostToEnterTile(u.pos, v.pos);
+                float alt = dist[u] + CostToEnterTile(u.pos, v.pos, unit);
                 if (alt < dist[v]) {
                     dist[v] = alt;
                     prev[v] = u;

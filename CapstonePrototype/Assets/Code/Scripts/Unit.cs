@@ -22,6 +22,7 @@ public class Unit : MonoBehaviour {
     int remainingMovement=2;
     bool isReadyToAdvance = true;
     Map.Coord turnStartPos;
+    float Y_POS = 1.25f;
 
     // Declare Delegates
     public delegate void PathCompleteDelegate();
@@ -46,10 +47,13 @@ public class Unit : MonoBehaviour {
         pos.x = (int)transform.position.x;
         pos.y = (int)transform.position.z;
         
+        // Set our color to our faction color
         Renderer rend = GetComponent<Renderer>();
         Material tempMaterial = new Material(rend.sharedMaterial);
         tempMaterial.color = faction.color;
         rend.sharedMaterial = tempMaterial;
+
+        map.tiles[pos.x, pos.y].GetComponent<ClickableTile>().SetOccupationStatus(true);
     }
 
 	void Update() {
@@ -61,9 +65,9 @@ public class Unit : MonoBehaviour {
 
 			while( currNode < currentPath.Count-1 ) {
 
-				Vector3 start = map.TileCoordToWorldCoord( currentPath[currNode].pos ) + 
+				Vector3 start = map.TileCoordToWorldCoord( currentPath[currNode].pos, Y_POS ) + 
 					new Vector3(0, 0, -0.5f) ;
-				Vector3 end   = map.TileCoordToWorldCoord( currentPath[currNode+1].pos )  + 
+				Vector3 end   = map.TileCoordToWorldCoord( currentPath[currNode+1].pos, Y_POS)  + 
 					new Vector3(0, 0, -0.5f) ;
 
 				Debug.DrawLine(start, end, Color.red);
@@ -73,7 +77,7 @@ public class Unit : MonoBehaviour {
 
             // Have we moved our visible piece close enough to the target tile that we can
             // advance to the next step in our pathfinding?
-            isReadyToAdvance = (Vector3.Distance(transform.position, map.TileCoordToWorldCoord(currentPath[0].pos)) < 0.1f);
+            isReadyToAdvance = (Vector3.Distance(transform.position, map.TileCoordToWorldCoord(currentPath[0].pos, Y_POS)) < 0.1f);
             if (isReadyToAdvance) {
                 AdvancePathing();
             }
@@ -81,7 +85,7 @@ public class Unit : MonoBehaviour {
         }
 
         // Smoothly animate towards the correct map tile.
-        transform.position = Vector3.Lerp(transform.position, map.TileCoordToWorldCoord(pos), 5f * Time.deltaTime);
+        transform.position = Vector3.Lerp(transform.position, map.TileCoordToWorldCoord(pos, Y_POS), 5f * Time.deltaTime);
 	}
 
     public List<Map.Coord> GetAvailableTileOptions(Node pos, int distance) {
@@ -107,6 +111,10 @@ public class Unit : MonoBehaviour {
         return new List<Map.Coord>(C);
     } 
 
+    public void SetPath(List<Node> newPath) {
+        map.tiles[pos.x, pos.y].GetComponent<ClickableTile>().SetOccupationStatus(false);
+        currentPath = newPath;
+    }
 
     // Advances our pathfinding progress by one tile.
     void AdvancePathing() {
@@ -121,19 +129,23 @@ public class Unit : MonoBehaviour {
 
         // Teleport us to our correct "current" position, in case we
         // haven't finished the animation yet.
-        transform.position = map.TileCoordToWorldCoord(pos);
+        transform.position = map.TileCoordToWorldCoord(pos, Y_POS);
 
         //Debug.Log(remainingMovement + " on tile " + currentPath[0].pos + ". Moving to " + currentPath[1].pos);
-
-        // Subtract cost from current tile to next tile
-        remainingMovement -= 1;
 
         // Move us to the next tile in the sequence
         pos.x = currentPath[1].pos.x;
         pos.y = currentPath[1].pos.y;
-		
-		// Remove the old "current" tile from the pathfinding list
-		currentPath.RemoveAt(0);
+
+        // Add our remaining movement to current tile
+        ClickableTile currentTile = map.tiles[pos.x, pos.y].GetComponent<ClickableTile>();
+        currentTile.AddToValue(moveSpeed-remainingMovement+1);
+
+        // Subtract cost from current tile to next tile
+        remainingMovement -= 1;
+
+        // Remove the old "current" tile from the pathfinding list
+        currentPath.RemoveAt(0);
 
 
         if (currentPath.Count == 1) {
@@ -162,6 +174,13 @@ public class Unit : MonoBehaviour {
         SetMoveSpeed(map.GetTileValue(pos));
         remainingMovement = moveSpeed;
         turnStartPos = pos;
+
+        //Let our resting tile know we have occupied it
+        var currentTile = map.tiles[pos.x, pos.y].GetComponent<ClickableTile>();
+        currentTile.SetOccupationStatus(true);
+        if (currentTile.GetValue() % 7 == 0) {
+            currentTile.SetOwner(faction);
+        }
 
         // Send out event message that our turn is complete
         if (turnCompleteEvent != null) {

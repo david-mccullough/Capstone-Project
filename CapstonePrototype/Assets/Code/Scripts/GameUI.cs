@@ -11,18 +11,38 @@ public class GameUI : MonoBehaviour {
 
     public Canvas screenCanvas;
     public Canvas worldCanvas;
+    public GameController controller;
+
+    private TextMesh turnTextMesh;
+    private float turnTextSize;
 
     [Header("Prefabs")]
     public GameObject[] prefabs;
 
     public void InitUI() {
 
+        controller.nextTurnEvent += OnNewTurn;
+        turnTextMesh = GetComponentInChildren<TextMesh>();
+        turnTextSize = turnTextMesh.characterSize;
+        OnNewTurn(controller.GetCurrentFaction().name);
         // Unit pin points
         /*foreach (Unit u in GameController.instance.allUnits) {
             Vector3 uPos = u.transform.position;
             //Instantiate(prefabs[(int)UIPrefabs.unitPin], new Vector3 (uPos.x, uPos.y+0.5f, uPos.z), Quaternion.identity, worldCanvas.transform);
         }*/
-	}
+    }
+
+    void Update() {
+
+        if (turnTextMesh.characterSize != turnTextSize) {
+            turnTextMesh.characterSize = Mathf.Lerp(turnTextMesh.characterSize, turnTextSize, 10f * Time.deltaTime);
+        }
+    }
+
+    void OnNewTurn(string factionName) {
+        turnTextMesh.characterSize *= 1.04f;
+        turnTextMesh.text = factionName + " TURN";
+    }
 
 	
 }

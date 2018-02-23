@@ -1,0 +1,24 @@
+fileFormatVersion: 2
+guid: 59dd6d6f109645c46bd6792678ec0591
+timeCreated: 1519361570
+licenseType: Free
+TrueTypeFontImporter:
+  serializedVersion: 4
+  fontSize: 200
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontName: Portico
+  fontNames:
+  - Portico
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: 8c7432609d7078d4bac139391d36ac0a, type: 3}
+  - {fileID: 12800000, guid: ab26c3a78b107e64c88ca7474c107c85, type: 3}
+  - {fileID: 12800000, guid: 2885b9ce7fa865b45b7916869147eb09, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

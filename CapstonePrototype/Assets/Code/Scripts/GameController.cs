@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,6 +22,8 @@ public class GameController : MonoBehaviour {
     private MapGenerator mapGen;
     private Map map;
 
+    // Create event actions
+    public event Action<string> nextTurnEvent;
 
     void Awake() {
                 
@@ -63,6 +66,10 @@ public class GameController : MonoBehaviour {
 
         currentFaction = activeFactions[turnIndex];
         uiText.text = currentFaction.name + " turn (" + turnIndex + ").";
+
+        // Announce we have changed turns
+        nextTurnEvent(currentFaction.name);
+
         return currentFaction;
     }
 
@@ -84,7 +91,7 @@ public class GameController : MonoBehaviour {
                 if (hit.transform.tag == "Tile") {
                     ClickableTile tile = hit.transform.GetComponent<ClickableTile>();
                     if (tile.IsAvailable()) {
-                        selectedUnit.currentPath = map.GeneratePathTo(selectedUnit.pos, tile.pos);
+                        selectedUnit.SetPath(map.GeneratePathTo(selectedUnit.pos, tile.pos, selectedUnit));
                     }
                 }
                 else if (hit.transform.tag == "Unit") {
@@ -119,6 +126,10 @@ public class GameController : MonoBehaviour {
 
     public Unit GetSelectedUnit() {
         return selectedUnit;
+    }
+
+    public Faction GetCurrentFaction() {
+        return currentFaction;
     }
 
     #endregion

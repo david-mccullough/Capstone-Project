@@ -68,7 +68,7 @@ public class MapGenerator: MonoBehaviour {
         for (int x = 0; x < currentMap.size.x; x++) {
             for (int y = 0; y < currentMap.size.y; y++) {
                 // Step through loop to create new positions
-                Vector3 tilePosition = CoordToPostiion(x, y);
+                Vector3 tilePosition = CoordToPosition(new Map.Coord(x,y), 0f);
                 // Create new tile instance from prefab, rotate 90 degrees, and cast as Tranform type
                 Transform newTile = Instantiate(tilePrefab, tilePosition, Quaternion.identity) as Transform; // Quaternion.Euler(Vector3.right * 90))
                 //Scale newTile based on outlinePercent
@@ -101,7 +101,7 @@ public class MapGenerator: MonoBehaviour {
             if (randomCoord != currentMap.Center && MapIsFloodable(obstacleMap, currentObstacleCount)
                 && !corners.Contains(randomCoord)) {
                 float obstacleHeight = Mathf.Lerp(currentMap.minObstacleHeight, currentMap.maxObstacleHeight, (float)prng.NextDouble());
-                Vector3 obstaclePosition = CoordToPostiion(randomCoord.x, randomCoord.y);
+                Vector3 obstaclePosition = CoordToPosition(randomCoord, 0f);
                 // instantiate obstacle
                 Transform newObstacle = Instantiate(obstaclePrefab, obstaclePosition, Quaternion.identity) as Transform;
                 newObstacle.localScale = new Vector3(tileSize, obstacleHeight, tileSize);
@@ -137,7 +137,7 @@ public class MapGenerator: MonoBehaviour {
 
             //for (int n = 0; n <= factions[i].GetStartingNumUnits(); n++) { TODO multiple units. for now just stick to ine for simplicity's sake
 
-            Unit newUnit = Instantiate(unitPrefab, currentMap.TileCoordToWorldCoord(origin), Quaternion.identity).GetComponent<Unit>() as Unit;
+            Unit newUnit = Instantiate(unitPrefab, CoordToPosition(origin, 1f), Quaternion.identity).GetComponent<Unit>() as Unit;
             if (newUnit != null) {
                 newUnit.Init(currentMap, origin, factions[i]);
                 newUnit.transform.parent = mapHolder;
@@ -226,8 +226,9 @@ public class MapGenerator: MonoBehaviour {
     }
 
     // Converts coord into real world location
-    Vector3 CoordToPostiion(int x, int y) {
-        return new Vector3(x, 0f, y) * tileSize;
+    Vector3 CoordToPosition(Map.Coord coord, float y) {
+        Vector3 pos = new Vector3(coord.x, 0f, coord.y) * tileSize;
+        return new Vector3(pos.x, y, pos.z);
     }
 
     // Ensures map is fully accessible using flood fill algorithm
