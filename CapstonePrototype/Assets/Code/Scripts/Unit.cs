@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 
@@ -10,19 +11,21 @@ public class Unit : MonoBehaviour {
     // and during movement animations, we are going to be
     // somewhere in between tiles.
     public Map.Coord pos;
-	public Map map;
+    public Map map;
     public Faction faction;
 
     // Our pathfinding info.  Null if we have no destination ordered.
     public List<Node> currentPath = null;
 
-	// How far this unit can move in one turn
+    // How far this unit can move in one turn
     [SerializeField]
-	int moveSpeed = 2;
-    int remainingMovement=2;
+    int moveSpeed = 2;
+    int remainingMovement = 2;
     bool isReadyToAdvance = true;
     Map.Coord turnStartPos;
     float Y_POS = 1.25f;
+
+    private Renderer rend;
 
     // Declare Delegates
     public delegate void PathCompleteDelegate();
@@ -44,36 +47,40 @@ public class Unit : MonoBehaviour {
         this.pos = pos;
         this.faction = faction;
 
+        faction.AddUnit(this);
+
         pos.x = (int)transform.position.x;
         pos.y = (int)transform.position.z;
-        
+
         // Set our color to our faction color
-        Renderer rend = GetComponent<Renderer>();
-        Material tempMaterial = new Material(rend.sharedMaterial);
-        tempMaterial.color = faction.color;
-        rend.sharedMaterial = tempMaterial;
+        rend = gameObject.GetComponent<Renderer>();
+        //Material tempMaterial = new Material(rend.sharedMaterial);
+        //tempMaterial.color = faction.color;
+        rend.material.color = faction.color;
+
+        Debug.Log("inited");
 
         map.tiles[pos.x, pos.y].GetComponent<ClickableTile>().SetOccupationStatus(true);
     }
 
-	void Update() {
+    void Update() {
 
         // Draw our debug line showing the pathfinding!
         // NOTE: This won't appear in the actual game view.
         if (currentPath != null) {
-			int currNode = 0;
+            int currNode = 0;
 
-			while( currNode < currentPath.Count-1 ) {
+            while (currNode < currentPath.Count - 1) {
 
-				Vector3 start = map.TileCoordToWorldCoord( currentPath[currNode].pos, Y_POS ) + 
-					new Vector3(0, 0, -0.5f) ;
-				Vector3 end   = map.TileCoordToWorldCoord( currentPath[currNode+1].pos, Y_POS)  + 
-					new Vector3(0, 0, -0.5f) ;
+                Vector3 start = map.TileCoordToWorldCoord(currentPath[currNode].pos, Y_POS) +
+                    new Vector3(0, 0, -0.5f);
+                Vector3 end = map.TileCoordToWorldCoord(currentPath[currNode + 1].pos, Y_POS) +
+                    new Vector3(0, 0, -0.5f);
 
-				Debug.DrawLine(start, end, Color.red);
+                Debug.DrawLine(start, end, Color.red);
 
-				currNode++;
-			}
+                currNode++;
+            }
 
             // Have we moved our visible piece close enough to the target tile that we can
             // advance to the next step in our pathfinding?
@@ -86,15 +93,19 @@ public class Unit : MonoBehaviour {
 
         // Smoothly animate towards the correct map tile.
         transform.position = Vector3.Lerp(transform.position, map.TileCoordToWorldCoord(pos, Y_POS), 5f * Time.deltaTime);
-	}
+    }
 
     public List<Map.Coord> GetAvailableTileOptions(Node pos, int distance) {
         // This is pretty inefficent... doing BFS twice and subtracting one from the other
         // to get the outer ring of available node coords
-        HashSet<Map.Coord> outer = new HashSet<Map.Coord>(map.BreadthFirst(pos, distance));
-        List<Map.Coord> inner = map.BreadthFirst(pos, distance - 1);
+        HashSet<Map.Coord> outer = new HashSet<Map.Coord>(map.BreadthFirst(pos, distance, this));
+        if (outer.Count < 1) {
+            return new List<Map.Coord>();
+        }
+        List<Map.Coord> inner = new List<Map.Coord>(map.BreadthFirst(pos, distance - 1, this));
 
         var C = outer.Subtract(inner);
+
 
         //step through inner nodes, remove them from outer node list
         /*for (int i = 0; i < inner.Count; i++) {
@@ -104,16 +115,31 @@ public class Unit : MonoBehaviour {
                 outer.Remove(inner[i]);
             }
         }*/
+
+        // TODO this is bad...
+        List<Map.Coord> tilesToRemove = new List<Map.Coord>();
         foreach (Map.Coord c in C) {
-            Debug.Log(c);
+            if (!map.UnitCanEnterTile(c, this)) {
+                tilesToRemove.Add(c);
+            }
         }
 
+        foreach (Map.Coord c in tilesToRemove) {
+            if (C.Contains(c)) {
+                C.Remove(c);
+            }
+        }
+
+        Debug.Log("returning available options");
         return new List<Map.Coord>(C);
-    } 
+    }
 
     public void SetPath(List<Node> newPath) {
         map.tiles[pos.x, pos.y].GetComponent<ClickableTile>().SetOccupationStatus(false);
-        currentPath = newPath;
+
+        map.ResetTileAvailability();
+        currentPath = newPath;    
+
     }
 
     // Advances our pathfinding progress by one tile.
@@ -139,14 +165,19 @@ public class Unit : MonoBehaviour {
 
         // Add our remaining movement to current tile
         ClickableTile currentTile = map.tiles[pos.x, pos.y].GetComponent<ClickableTile>();
-        currentTile.AddToValue(moveSpeed-remainingMovement+1);
+        currentTile.AddToValue(moveSpeed - remainingMovement + 1);
+        if (currentTile.CheckForCapture(faction)) {
+            // This is the last tile, so set out movespeed to one
+            if (currentTile.pos == currentPath[currentPath.Count - 1].pos) {
+                SetMoveSpeed(1);
+            }
+        }
 
         // Subtract cost from current tile to next tile
         remainingMovement -= 1;
 
         // Remove the old "current" tile from the pathfinding list
         currentPath.RemoveAt(0);
-
 
         if (currentPath.Count == 1) {
             // We only have one tile left in the path, and that tile MUST be our ultimate
@@ -156,14 +187,14 @@ public class Unit : MonoBehaviour {
             if (pathCompleteEvent != null) {
                 pathCompleteEvent();
             }
-            
+
             // We are at our destinationa and we are out of moves, so end our turn
             if (remainingMovement <= 0) {
                 Debug.Log("Unit out of path and moves! Ending turn.");
                 FinishTurn();
             }
-		}
-	}
+        }
+    }
 
     public void FinishTurn() {
 
@@ -178,9 +209,6 @@ public class Unit : MonoBehaviour {
         //Let our resting tile know we have occupied it
         var currentTile = map.tiles[pos.x, pos.y].GetComponent<ClickableTile>();
         currentTile.SetOccupationStatus(true);
-        if (currentTile.GetValue() % 7 == 0) {
-            currentTile.SetOwner(faction);
-        }
 
         // Send out event message that our turn is complete
         if (turnCompleteEvent != null) {
@@ -201,6 +229,16 @@ public class Unit : MonoBehaviour {
         }
     }
 
+    public void Elimnate() {
+        Debug.Log("Eliminated unit from " + faction.name);
+        StartCoroutine(FadeOut(0.1f));
+        faction.RemoveUnit(this); //this should trigger faction to report that its lost on the following turn
+
+        var currentTile = map.tiles[pos.x, pos.y].GetComponent<ClickableTile>();
+        currentTile.SetOccupationStatus(false);
+        rend.enabled = false;
+    }
+
     public int GetMoveSpeed() {
         return moveSpeed;
     }
@@ -214,4 +252,14 @@ public class Unit : MonoBehaviour {
         return remainingMovement;
     }
 
+    IEnumerator FadeOut(float time) {
+        
+        for (float f = 1f; f >= 0; f -= 0.1f) {
+            Color c = rend.material.color;
+            c.a = f;
+            rend.material.SetColor("_Emission", c);
+            //rend.material.color = c;
+            yield return new WaitForSeconds(time);
+        }
+    }
 }

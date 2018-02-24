@@ -22,9 +22,10 @@ public class GameUI : MonoBehaviour {
     public void InitUI() {
 
         controller.nextTurnEvent += OnNewTurn;
+        controller.winEvent += OnWin;
         turnTextMesh = GetComponentInChildren<TextMesh>();
         turnTextSize = turnTextMesh.characterSize;
-        OnNewTurn(controller.GetCurrentFaction().name);
+        OnNewTurn(controller.GetCurrentFaction());
         // Unit pin points
         /*foreach (Unit u in GameController.instance.allUnits) {
             Vector3 uPos = u.transform.position;
@@ -39,9 +40,20 @@ public class GameUI : MonoBehaviour {
         }
     }
 
-    void OnNewTurn(string factionName) {
+    void OnNewTurn(Faction faction) {
         turnTextMesh.characterSize *= 1.04f;
-        turnTextMesh.text = factionName + " TURN";
+        turnTextMesh.text = faction.name + " TURN";
+        Color c = faction.color;
+        c.a = .5f;
+        turnTextMesh.GetComponent<Renderer>().material.SetColor("_Color", c);
+    }
+    
+    void OnWin(Faction faction) {
+        turnTextMesh.characterSize *= 1.04f;
+        turnTextMesh.text = faction.name + " WINS";
+        Color c = faction.color;
+        c.a = .5f;
+        turnTextMesh.GetComponent<Renderer>().material.SetColor("_Color", c);
     }
 
 	

@@ -6,10 +6,12 @@ using UnityEngine.UI;
 public class GameController : MonoBehaviour {
 
     public static Faction[] factions;
-    public Faction[] activeFactions;
+    public List<Faction> activeFactions;
+    private Queue<Faction> factionQueue = new Queue<Faction>();
     public Unit[] allUnits; //TODO could we just access units in our faction array?
     private Faction currentFaction;
     private Unit selectedUnit;
+    private int numActiveFactions = 0;
 
     [SerializeField]
     private Text uiText;
@@ -18,14 +20,16 @@ public class GameController : MonoBehaviour {
     private GameUI ui;
 
     private int turnIndex = 0;
+    private bool gameOver = false;
 
     private MapGenerator mapGen;
     private Map map;
 
     // Create event actions
-    public event Action<string> nextTurnEvent;
+    public event Action<Faction> nextTurnEvent;
+    public event Action<Faction> winEvent;
 
-    void Awake() {
+    void Start() {
                 
         InitGame();
 
@@ -42,11 +46,30 @@ public class GameController : MonoBehaviour {
     void InitGame() {
 
         mapGen = GetComponent<MapGenerator>();
-        map = mapGen.GenerateMap(activeFactions);
+        System.Random prng = new System.Random();
+        map = mapGen.GenerateMap(activeFactions.ToArray(), prng.Next(100,200));
         currentFaction = activeFactions[turnIndex];
         uiText.text = currentFaction.name + " turn (" + turnIndex + ").";
 
         ui = FindObjectOfType<GameUI>();
+
+        /*foreach (Faction f in activeFactions) {
+            f.FactionDeactivateEvent += OnFactionDeactivate;
+            numActiveFactions++;
+            if (f!=null)
+            factionQueue.Enqueue(f);
+        }*/
+        numActiveFactions = 2;
+        activeFactions[0].FactionDeactivateEvent += OnFactionDeactivate;
+        activeFactions[1].FactionDeactivateEvent += OnFactionDeactivate;
+    }
+
+    public void RestartGame() {
+        UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
+    }
+
+    public void EndGame() {
+        Application.Quit();
     }
 
     void Update() {
@@ -58,18 +81,57 @@ public class GameController : MonoBehaviour {
 
     // Advances game to next faction's turn, returns new current faction
     public Faction NextFaction() {
+        /*Faction newFaction;
+        if (numActiveFactions > 2) {
 
+            //requeu curernt faction
+            if (currentFaction.IsActive()) {
+                factionQueue.Enqueue(factionQueue.Dequeue());
+            }
+            else {
+                factionQueue.Dequeue();
+            }
+            
+            
+            //next faction active, return it
+            if (factionQueue.Peek().IsActive()) {
+                newFaction = factionQueue.Dequeue();
+            }
+            //next faction inactive, dequeue until we find one that's not
+            else {
+                while (!factionQueue.Peek().IsActive()) {
+                    factionQueue.Dequeue();
+                    //dont bother requing deactivated factions
+                }
+                newFaction = factionQueue.Dequeue();
+            }
+           
+        }
+        else {
+            return currentFaction;
+        }
+
+        */
         // Ensure we cycle back to start of factions
         turnIndex++;
-        int maxIndex = activeFactions.Length;
-        turnIndex = turnIndex % maxIndex;
+        int maxIndex = numActiveFactions;
+        if (maxIndex < 2) {
+            return currentFaction;
+        }
+        else {
+            turnIndex = turnIndex % maxIndex;
 
-        currentFaction = activeFactions[turnIndex];
-        uiText.text = currentFaction.name + " turn (" + turnIndex + ").";
+            while (!activeFactions[turnIndex].IsActive()) {
+                turnIndex++;
+            }
+            currentFaction = activeFactions[turnIndex];
+            uiText.text = currentFaction.name + " turn (" + turnIndex + ").";
+        }
 
         // Announce we have changed turns
-        nextTurnEvent(currentFaction.name);
-
+        //currentFaction = newFaction;
+        nextTurnEvent(currentFaction);
+        Debug.Log("FACTION" + currentFaction.name);
         return currentFaction;
     }
 
@@ -79,6 +141,23 @@ public class GameController : MonoBehaviour {
         // or update the current unit (actaully just deselect it for expediency sake)
         if (true) {
             DeselectUnit();
+            NextFaction();
+        }
+    }
+
+    void OnFactionDeactivate() {
+        numActiveFactions--;
+        NextFaction();
+        //Check for end game
+        if (numActiveFactions == 1) {
+            //Game over : last faction remains
+            turnIndex = turnIndex++ % 2; //TODO remove this hardcoded foolery
+            currentFaction = activeFactions[turnIndex];
+            Debug.Log(currentFaction.name + " wins!");
+            winEvent(currentFaction);
+            gameOver = true;
+        }
+        else {
             NextFaction();
         }
     }
@@ -94,7 +173,7 @@ public class GameController : MonoBehaviour {
                         selectedUnit.SetPath(map.GeneratePathTo(selectedUnit.pos, tile.pos, selectedUnit));
                     }
                 }
-                else if (hit.transform.tag == "Unit") {
+                else if (hit.transform.tag == "Unit" && gameOver != true) {
                     SelectUnit(hit.transform.GetComponent<Unit>());
                 }
             }
@@ -116,7 +195,12 @@ public class GameController : MonoBehaviour {
                 // Get the frontier of available move options...
                 Map.Coord[] coordOptions = u.GetAvailableTileOptions(map.graph[u.pos.x, u.pos.y], u.GetRemainingMoves()).ToArray();
                 // ...and make those tiles walkable
-                map.MakeTilesAvailable(coordOptions);
+                if (coordOptions.Length <= 0) {
+                    selectedUnit.Elimnate();
+                }
+                else {
+                    map.MakeTilesAvailable(coordOptions);
+                }
             }
         }
     }
@@ -155,47 +239,6 @@ public class GameController : MonoBehaviour {
 //TODO turn factions into a scriptable object
 #region Structs
 
-[System.Serializable]
-public struct Faction {
-    public string name;
-    public Color color;
-    private List<Unit> myUnits;
-    private int startingNumUnits;
-    private int numActiveUnits;
-    
-    public Faction(string name)
-        : this(name, Color.black, 1) {
-    }
 
-    public Faction(string name, Color color, int numUnits) {
-        this.name = name;
-        this.color = color;
-        this.startingNumUnits = numUnits;
-        this.numActiveUnits = numUnits;
-        myUnits = new List<Unit>();
-    }
-
-    public void AddUnit(Unit unit) {
-        myUnits.Add(unit);
-        numActiveUnits++;
-    }
-
-    public Unit[] GetUnits() {
-        return myUnits.ToArray();
-    }
-
-    public int GetStartingNumUnits() {
-        return startingNumUnits;
-    }
-
-    public static bool operator ==(Faction f1, Faction f2) {
-        return f1.Equals(f2);
-    }
-
-    public static bool operator !=(Faction f1, Faction f2) {
-        return !f1.Equals(f2);
-    }
-
-}
 
 #endregion

@@ -13,7 +13,7 @@ public class CS_MapEditor : Editor {
         MapGenerator map = target as MapGenerator;
 
         if (GUILayout.Button("Generate Map")) {
-            map.GenerateMap(GameController.factions);
+            map.GenerateMap(GameController.factions, 1);
         }
         
 

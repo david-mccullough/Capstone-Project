@@ -25,6 +25,17 @@ public class ClickableTile : MonoBehaviour {
         renderers[1] = top.GetComponent<Renderer>();
     }
 
+    public bool CheckForCapture(Faction faction) {
+        if (GetValue() % 10 == 0) {
+            SetOwner(faction);
+            SetValue(1);
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
     public void SetValue(int value) {
         this.value = value;
         valueText.text = "" + value;
@@ -33,7 +44,6 @@ public class ClickableTile : MonoBehaviour {
 
     public void AddToValue(int value) {
         SetValue(this.value + value);
-        StartCoroutine(FadeToColor(Color.white, .04f));
     }
 
     public int GetValue() {
@@ -107,13 +117,11 @@ public class ClickableTile : MonoBehaviour {
     }
 
     IEnumerator FadeToColor(Color c, float time) {
-        Debug.Log("fadint!");
         for (var f = 0f; f < 1f; f += 0.1f) {
 
             foreach (Renderer r in renderers) {
                 r.material.color = Color.Lerp(r.material.color, c, f);
             }
-            Debug.Log("f: " +  f);
             yield return new WaitForSeconds(time);
         }
     }

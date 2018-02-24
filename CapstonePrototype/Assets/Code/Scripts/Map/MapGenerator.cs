@@ -33,10 +33,10 @@ public class MapGenerator: MonoBehaviour {
    
     #region Main Methods
 
-    public Map GenerateMap(Faction[] factions) {
+    public Map GenerateMap(Faction[] factions, int seed) {
 
         currentMap = maps[mapIndex];
-        System.Random prng = new System.Random(currentMap.seed);
+        System.Random prng = new System.Random(seed);
 
         currentMap.tiles = new Transform[currentMap.size.x, currentMap.size.y];
 
@@ -129,8 +129,8 @@ public class MapGenerator: MonoBehaviour {
         // Create units for each active faction, initialize them, and set its parent to the mapHolder
         Map.Coord origin; //this will tell us which quadrant to spawn each faction's units
 
-        // step trough our list of factions
-        for (int i = 0; i < factions.Length; i++) {
+        // step trough our list of factions TODO change back to length of factions
+        for (int i = 0; i < 2/*factions.Length*/; i++) {
 
             // determine quadrant
             origin = corners[i];

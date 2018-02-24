@@ -96,7 +96,7 @@ public class Map {
         var targetTile = tiles[pos.x, pos.y].GetComponent<ClickableTile>();
         string ownerName = targetTile.GetOwner().name;
         canEnter = (targetTile.IsWalkable()
-                    && !targetTile.IsOccupied()
+                    && (!targetTile.IsOccupied() || targetTile.pos == u.pos)
                     && (ownerName == u.faction.name || ownerName == "NULL"));
 
         return canEnter;
@@ -195,16 +195,17 @@ public class Map {
 
         // Right now, currentPath describes a route from our target to our source
         // So we need to invert it!
-
+            
         currentPath.Reverse();
 
         return currentPath;
     }
 
     // Flood cells from specific coord and return an array of those flooded coords
-    public List<Coord> BreadthFirst(Node parent, int maxDepth) {
+    public HashSet<Coord> BreadthFirst(Node parent, int maxDepth, Unit unit) {
 
-        List<Coord> nodes = new List<Coord>();
+        int failSafe = 0;
+        HashSet<Coord> nodes = new HashSet<Coord>();
 
         if (maxDepth < 0) {
             return nodes;
@@ -217,30 +218,38 @@ public class Map {
             elementsToDepthIncrease = 1,
             nextElementsToDepthIncrease = 0;
 
-        while (nodeQueue.Count > 0) {
-            Node current = nodeQueue.Dequeue();
+        while (nodeQueue.Count > 0 && failSafe < 10000) {
+            failSafe++;
+            Debug.Log("fs " + failSafe);
+            if (nodeQueue.Peek() != null) {
+                Node current = nodeQueue.Dequeue();
 
-                
-                    nodes.Add(current.pos);
+                nodes.Add(current.pos);
 
-            foreach (Node child in current.neighbours) {
-                if (tiles[current.pos.x, current.pos.y].GetComponent<ClickableTile>().IsWalkable()) {
-                    nextElementsToDepthIncrease++;
+                foreach (Node child in current.neighbours) {
+                    var currentTile = tiles[child.pos.x, child.pos.y].GetComponent<ClickableTile>();
+                    if (UnitCanEnterTile(currentTile.pos, unit)
+                        && !nodeQueue.Contains(child)) {
+                        nextElementsToDepthIncrease++;
+                        nodeQueue.Enqueue(child);
+                    }
                 }
-            }
 
-            if (--elementsToDepthIncrease == 0) {
-                if (++currentDepth > maxDepth) {
-                    return nodes;
+                if (--elementsToDepthIncrease == 0) {
+                    if (++currentDepth > maxDepth) {
+                        return nodes;
+                    }
+                    elementsToDepthIncrease = nextElementsToDepthIncrease;
+                    nextElementsToDepthIncrease = 0;
                 }
-                elementsToDepthIncrease = nextElementsToDepthIncrease;
-                nextElementsToDepthIncrease = 0;
-            }
 
-            foreach (Node child in current.neighbours) {
-                if (tiles[current.pos.x, current.pos.y].GetComponent<ClickableTile>().IsWalkable()) {
-                    nodeQueue.Enqueue(child);
-                }
+                /*foreach (Node child in current.neighbours) {
+                    var currentTile = tiles[child.pos.x, child.pos.y].GetComponent<ClickableTile>();
+                    //if (currentTile.IsWalkable() && (!currentTile.IsOccupied() || current.pos == parent.pos)) {
+                    if (UnitCanEnterTile(currentTile.pos, unit)) {
+                        nodeQueue.Enqueue(child);
+                    }
+                }*/
             }
         }
         
@@ -370,6 +379,7 @@ public class Map {
     }
 
     public void MakeTilesAvailable(Coord[] coords) {
+        if (coords.Length == 0) { return; }
         foreach (Coord c in coords) {
             tiles[c.x, c.y].GetComponent<ClickableTile>().SetAvailability(true);
         }
