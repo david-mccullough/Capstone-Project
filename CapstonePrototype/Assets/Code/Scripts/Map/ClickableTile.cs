@@ -43,7 +43,7 @@ public class ClickableTile : MonoBehaviour {
     }
 
     public void AddToValue(int value) {
-        SetValue(this.value + value);
+        SetValue((this.value + value) % 10);
     }
 
     public int GetValue() {

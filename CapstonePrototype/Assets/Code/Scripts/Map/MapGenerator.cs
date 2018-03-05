@@ -46,7 +46,7 @@ public class MapGenerator: MonoBehaviour {
                 allTileCoords.Add(new Map.Coord(x, y));
             }
         }
-        shuffledTileCoords = new Queue<Map.Coord>(Utility.ShuffleArray(allTileCoords.ToArray(), currentMap.seed));
+        shuffledTileCoords = new Queue<Map.Coord>(Utility.ShuffleArray(allTileCoords.ToArray(), seed));
 
         //Get corners (will be where we spawn units)
         List<Map.Coord> corners = new List<Map.Coord>();
