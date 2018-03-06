@@ -36,14 +36,17 @@ public class ClickableTile : MonoBehaviour {
         }
     }
 
+    public void SetValueText(int value) {
+        valueText.text = "" + value;
+    }
+
     public void SetValue(int value) {
         this.value = value;
-        valueText.text = "" + value;
-        
+        SetValueText(value);
     }
 
     public void AddToValue(int value) {
-        SetValue((this.value + value) % 10);
+        SetValue(this.value + value);
     }
 
     public int GetValue() {

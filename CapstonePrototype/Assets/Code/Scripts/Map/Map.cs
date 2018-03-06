@@ -90,8 +90,7 @@ public class Map {
 
     public bool UnitCanEnterTile(Coord pos, Unit u) {
 
-        // We could test the unit's walk/hover/fly type against various
-        // terrain flags here to see if they are allowed to enter the tile.
+        // Is this tile walkable, not occupied, or captured by an opponent?
         bool canEnter = true;
         var targetTile = tiles[pos.x, pos.y].GetComponent<ClickableTile>();
         string ownerName = targetTile.GetOwner().name;

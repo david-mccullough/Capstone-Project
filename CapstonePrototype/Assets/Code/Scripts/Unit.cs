@@ -138,8 +138,9 @@ public class Unit : MonoBehaviour {
         map.tiles[pos.x, pos.y].GetComponent<ClickableTile>().SetOccupationStatus(false);
 
         map.ResetTileAvailability();
-        currentPath = newPath;    
+        currentPath = newPath;
 
+        //foreach (Node n in currentPath) { Debug.Log(n.pos); }
     }
 
     // Advances our pathfinding progress by one tile.

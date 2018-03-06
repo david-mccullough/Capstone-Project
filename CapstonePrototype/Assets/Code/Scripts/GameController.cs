@@ -3,7 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+enum ControllerState {
+    idle = 0,
+    drawing = 1,
+}
+
 public class GameController : MonoBehaviour {
+
+    ControllerState state = ControllerState.idle;
 
     public static Faction[] factions;
     public List<Faction> activeFactions;
@@ -12,6 +19,7 @@ public class GameController : MonoBehaviour {
     private Faction currentFaction;
     private Unit selectedUnit;
     private int numActiveFactions = 0;
+    private Stack<Node> drawPathStack;
 
     [SerializeField]
     private Text uiText;
@@ -62,6 +70,9 @@ public class GameController : MonoBehaviour {
         numActiveFactions = 2;
         activeFactions[0].FactionDeactivateEvent += OnFactionDeactivate;
         activeFactions[1].FactionDeactivateEvent += OnFactionDeactivate;
+
+        //create path queue object
+        drawPathStack = new Stack<Node>();
     }
 
     public void RestartGame() {
@@ -74,9 +85,17 @@ public class GameController : MonoBehaviour {
 
     void Update() {
 
-        CheckForSelection();
-        if (selectedUnit != null)
-        uiUnitText.text = selectedUnit.GetMoveSpeed() + "," + selectedUnit.GetRemainingMoves();
+        switch (state) {
+            case ControllerState.idle:
+                CheckForSelection();
+            break;
+
+            case ControllerState.drawing:
+                DrawPath();
+            break;
+        }
+        
+
     }
 
     // Advances game to next faction's turn, returns new current faction
@@ -162,15 +181,84 @@ public class GameController : MonoBehaviour {
         }
     }
 
+    void DrawPath() {
+        if (Input.GetButtonUp("Fire1")) {
+            //We have let go, return to idle state
+            state = ControllerState.idle;
+
+            //All moves used?
+             if (drawPathStack.Count-1 == selectedUnit.GetMoveSpeed()) {
+                //Is this a valid path that leads to a destination tile?
+                Node finalNode = drawPathStack.Peek();
+                if (map.tiles[finalNode.pos.x, finalNode.pos.y].GetComponent<ClickableTile>().IsAvailable()) {
+                    //Feed our unit this path
+                    Debug.Log("sending drawn path to unit");
+                    List<Node> path = new List<Node>(drawPathStack);
+                    path.Reverse();
+                    selectedUnit.SetPath(path);
+                }
+            }
+            ClearDrawPath();
+            return;
+        }
+
+        Node currentNode = drawPathStack.Peek();
+        RaycastHit hit;
+        //Check if we are hovering over tile
+        if (MouseCast(out hit)) {
+            if (hit.transform.tag == "Tile") {
+                ClickableTile tempTile = hit.transform.GetComponent<ClickableTile>();
+                Node tempNode = map.graph[tempTile.pos.x, tempTile.pos.y];
+
+                //Is the tile an walkable neighbor tile?
+                if (NodeIsNeighbour(currentNode, tempNode) && map.UnitCanEnterTile(tempNode.pos, selectedUnit)) {
+                    //Is it the previous path node?
+                    if (drawPathStack.Contains(tempNode)) {
+                        //pop current position
+                        Node popped = drawPathStack.Pop();
+                        ClickableTile tile = map.tiles[popped.pos.x, popped.pos.y].GetComponent<ClickableTile>();
+                        Debug.Log(tile.GetValue());
+                        if (!tile.IsAvailable()) {
+                            tile.Highlight(false);
+                        }
+                        tile.SetValueText(tile.GetValue());
+                    }
+                    //If not, we can push this neighbor is we have remianing moves, one step closer to destination
+                    else if (drawPathStack.Count - 1 < selectedUnit.GetMoveSpeed()) {
+                        {
+                            drawPathStack.Push(tempNode);
+                            //highlight tempTile? show its part of path
+                            tempTile.Highlight(true);
+                            tempTile.SetValueText(tempTile.GetValue() + drawPathStack.Count-1);
+                        }
+                    }
+                }
+            } //end MouseCast
+        }
+    }
+
+    void ClearDrawPath() {
+        while (drawPathStack.Count > 0) {
+            Node popped = drawPathStack.Pop();
+            ClickableTile tile = map.tiles[popped.pos.x, popped.pos.y].GetComponent<ClickableTile>();
+            if (!tile.IsAvailable()) {
+                tile.Highlight(false);
+            }
+            tile.SetValueText(tile.GetValue());
+        }
+    }
+
     void CheckForSelection() {
         if (Input.GetButtonDown("Fire1")) {
             RaycastHit hit;
             if (MouseCast(out hit)) {
+
                 //If hit unit, select it, else deselects current unit
                 if (hit.transform.tag == "Tile") {
                     ClickableTile tile = hit.transform.GetComponent<ClickableTile>();
+                    //Tile is available, generate path to it and give the path to our unit
                     if (tile.IsAvailable()) {
-                        selectedUnit.SetPath(map.GeneratePathTo(selectedUnit.pos, tile.pos, selectedUnit));
+                        //selectedUnit.SetPath(map.GeneratePathTo(selectedUnit.pos, tile.pos, selectedUnit));
                     }
                 }
                 else if (hit.transform.tag == "Unit" && gameOver != true) {
@@ -181,6 +269,13 @@ public class GameController : MonoBehaviour {
                 DeselectUnit();
             }
         }
+    }
+
+    bool NodeIsNeighbour(Node source, Node neighbour) {
+        if (source.neighbours.Contains(neighbour)) {
+            return true;
+        }
+        return false;
     }
 
     void SelectUnit(Unit u) {
@@ -194,13 +289,21 @@ public class GameController : MonoBehaviour {
                 selectedUnit = u;
                 // Get the frontier of available move options...
                 Map.Coord[] coordOptions = u.GetAvailableTileOptions(map.graph[u.pos.x, u.pos.y], u.GetRemainingMoves()).ToArray();
+
                 // ...and make those tiles walkable
                 if (coordOptions.Length <= 0) {
+                    // Kill unit if no desitnation options!
                     selectedUnit.Elimnate();
                 }
                 else {
                     map.MakeTilesAvailable(coordOptions);
                 }
+
+                //queue unit's position to drawPath
+                drawPathStack.Clear();
+                drawPathStack.Push(map.graph[u.pos.x,u.pos.y]);
+                //map.tiles[u.pos.x, u.pos.y].GetComponent<ClickableTile>().Highlight(true);
+                state = ControllerState.drawing;
             }
         }
     }
@@ -214,6 +317,10 @@ public class GameController : MonoBehaviour {
 
     public Faction GetCurrentFaction() {
         return currentFaction;
+    }
+
+    public int GetState() {
+        return (int)state;
     }
 
     #endregion

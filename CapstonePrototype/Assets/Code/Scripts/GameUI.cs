@@ -16,6 +16,8 @@ public class GameUI : MonoBehaviour {
     private TextMesh turnTextMesh;
     private float turnTextSize;
 
+    public Text debugText;
+
     [Header("Prefabs")]
     public GameObject[] prefabs;
 
@@ -38,6 +40,8 @@ public class GameUI : MonoBehaviour {
         if (turnTextMesh.characterSize != turnTextSize) {
             turnTextMesh.characterSize = Mathf.Lerp(turnTextMesh.characterSize, turnTextSize, 10f * Time.deltaTime);
         }
+
+        debugText.text = "Controller State: " + controller.GetState();
     }
 
     void OnNewTurn(Faction faction) {
