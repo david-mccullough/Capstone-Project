@@ -37,7 +37,7 @@ public class MapGenerator: MonoBehaviour {
 
         currentMap = maps[mapIndex];
         System.Random prng = new System.Random(seed);
-
+        
         currentMap.tiles = new Transform[currentMap.size.x, currentMap.size.y];
 
         allTileCoords = new List<Map.Coord>();

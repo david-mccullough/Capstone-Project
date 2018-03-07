@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2015
+# Visual Studio 2017
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CapstonePrototype", "CapstonePrototype.csproj", "{22F0F7F5-87FD-136F-679A-F8E48268D87E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CapstonePrototype.Editor", "CapstonePrototype.Editor.csproj", "{0E7B7867-B4CB-8816-A2CA-F7230BEBA0F3}"

@@ -293,7 +293,7 @@ public class Map {
         return false;
     }
 
-    public List<Coord> GetCircleCells(Coord source, int radius, bool isFilled) {
+    public List<Coord> GetCellsInCircle(Coord source, int radius, bool isFilled) {
 
         List<Coord> points = new List<Coord>();
 
