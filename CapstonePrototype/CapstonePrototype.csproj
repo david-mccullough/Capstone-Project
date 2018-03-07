@@ -75,6 +75,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Code\Scripts\Faction.cs" />
     <Compile Include="Assets\Code\Scripts\GameController.cs" />
     <Compile Include="Assets\Code\Scripts\GameUI.cs" />
     <Compile Include="Assets\Code\Scripts\Map\ClickableTile.cs" />
@@ -82,12 +83,12 @@
     <Compile Include="Assets\Code\Scripts\Map\MapGenerator.cs" />
     <Compile Include="Assets\Code\Scripts\Map\Node.cs" />
     <Compile Include="Assets\Code\Scripts\Map\TileType.cs" />
+    <Compile Include="Assets\Code\Scripts\PerlinNoise.cs" />
     <Compile Include="Assets\Code\Scripts\Unit.cs" />
     <Compile Include="Assets\Code\Scripts\Utility.cs" />
-    <Compile Include="Assets\Faction.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\Code\CustomOutline.shader" />
+    <None Include="Assets\Code\Shaders\CustomOutline.shader" />
     <None Include="Assets\UI Assets\Fonts\3DText.shader" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

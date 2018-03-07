@@ -87,48 +87,36 @@ public class MapGenerator: MonoBehaviour {
             }
         }
 
+        #region Obstacle Generation
         bool[,] obstacleMap = new bool[(int)currentMap.size.x, (int)currentMap.size.y];
-
+        
         // Determine number of obstacles
         int obstacleCount = (int)(currentMap.size.x * currentMap.size.y * currentMap.obstaclePercent);
         int currentObstacleCount = 0;
-        // Create obstacles
-        for (int i = 0; i < obstacleCount; i++) {
-            Map.Coord randomCoord = GetRandomCoord();
-            obstacleMap[randomCoord.x, randomCoord.y] = true;
+
+        // Create obstacles using PerlinNoise
+        PerlinNoise perlin = new PerlinNoise(currentMap.size.x, currentMap.size.y, seed);
+        Map.Coord[] obstacleCoords = GetPerlinCoords(perlin, currentMap.obstaclePercent);
+
+        foreach (Map.Coord c in obstacleCoords) {
+            obstacleMap[c.x, c.y] = true;
             currentObstacleCount++;
-
-            if (randomCoord != currentMap.Center && MapIsFloodable(obstacleMap, currentObstacleCount)
-                && !corners.Contains(randomCoord)) {
-                float obstacleHeight = Mathf.Lerp(currentMap.minObstacleHeight, currentMap.maxObstacleHeight, (float)prng.NextDouble());
-                Vector3 obstaclePosition = CoordToPosition(randomCoord, 0f);
-                // instantiate obstacle
-                Transform newObstacle = Instantiate(obstaclePrefab, obstaclePosition, Quaternion.identity) as Transform;
-                newObstacle.localScale = new Vector3(tileSize, obstacleHeight, tileSize);
-                newObstacle.transform.position = new Vector3(newObstacle.transform.position.x, obstacleHeight / 2 + 0.5f, newObstacle.transform.position.z);
-                newObstacle.localScale = new Vector3((1 - outlinePercent) * tileSize, obstacleHeight, (1 - outlinePercent) * tileSize);
-
-                // make tiles that obstacles occupy unwalkable
-                currentMap.tiles[randomCoord.x, randomCoord.y].GetComponent<ClickableTile>().SetWalkability(false);
-
-                //adjust color
-                Renderer obstacleRenderer = newObstacle.GetComponent<Renderer>();
-                Material obstacleMaterial = new Material (obstacleRenderer.sharedMaterial);
-                float colorPercent = randomCoord.y / (float)currentMap.size.y;
-                obstacleMaterial.color = Color.Lerp(currentMap.foregroundColor, currentMap.backgroundColor, colorPercent);
-                obstacleRenderer.sharedMaterial = obstacleMaterial;
-
+            // Check that this coord is valid
+            if (c != currentMap.Center && MapIsFloodable(obstacleMap, currentObstacleCount) && !corners.Contains(c)) {
+                //Create obstacle
+                Transform newObstacle = CreateObstacle(c, perlin.GetValueAt(c.x, c.y));
                 newObstacle.parent = mapHolder;
             }
             else {
-                obstacleMap[randomCoord.x, randomCoord.y] = false;
+                obstacleMap[c.x, c.y] = false;
                 currentObstacleCount--;
             }
+                
         }
+        #endregion
 
         // Create units for each active faction, initialize them, and set its parent to the mapHolder
         Map.Coord origin; //this will tell us which quadrant to spawn each faction's units
-
         // step trough our list of factions TODO change back to length of factions
         for (int i = 0; i < 2/*factions.Length*/; i++) {
 
@@ -225,6 +213,24 @@ public class MapGenerator: MonoBehaviour {
         return randomCoord;
     }
 
+    public Map.Coord[] GetPerlinCoords(PerlinNoise perlin, float upperBound) {
+        List<Map.Coord> coords = new List<Map.Coord>();
+        int width = currentMap.size.x;
+        int height = currentMap.size.y;
+
+        //Step through 2D perlin noise graph
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                //If value is less thanor equal to our upper bound, add this point as a coord
+                if (perlin.GetValueAt((float)i / width * perlin.GetWidth(), (float)j / height * perlin.GetHeight()) <= upperBound) {
+                    coords.Add(new Map.Coord(i, j));
+                }
+            }
+        }
+
+        return coords.ToArray();
+    }
+
     // Converts coord into real world location
     Vector3 CoordToPosition(Map.Coord coord, float y) {
         Vector3 pos = new Vector3(coord.x, 0f, coord.y) * tileSize;
@@ -271,6 +277,28 @@ public class MapGenerator: MonoBehaviour {
 
         int targetAccessibleTileCount = (int)(currentMap.size.x * currentMap.size.y - currentObstacleCount);
         return targetAccessibleTileCount == accessibleTileCount;
+    }
+
+    Transform CreateObstacle(Map.Coord randomCoord, float heightScale) {
+        float obstacleHeight = Mathf.Lerp(currentMap.minObstacleHeight, currentMap.maxObstacleHeight, heightScale);
+        Vector3 obstaclePosition = CoordToPosition(randomCoord, 0f);
+        // instantiate obstacle
+        Transform newObstacle = Instantiate(obstaclePrefab, obstaclePosition, Quaternion.identity) as Transform;
+        newObstacle.localScale = new Vector3(tileSize, obstacleHeight, tileSize);
+        newObstacle.transform.position = new Vector3(newObstacle.transform.position.x, obstacleHeight / 2 + 0.5f, newObstacle.transform.position.z);
+        newObstacle.localScale = new Vector3((1 - outlinePercent) * tileSize, obstacleHeight, (1 - outlinePercent) * tileSize);
+
+        // make tiles that obstacles occupy unwalkable
+        currentMap.tiles[randomCoord.x, randomCoord.y].GetComponent<ClickableTile>().SetWalkability(false);
+
+        //adjust color
+        Renderer obstacleRenderer = newObstacle.GetComponent<Renderer>();
+        Material obstacleMaterial = new Material(obstacleRenderer.sharedMaterial);
+        float colorPercent = randomCoord.y / (float)currentMap.size.y;
+        obstacleMaterial.color = Color.Lerp(currentMap.foregroundColor, currentMap.backgroundColor, colorPercent);
+        obstacleRenderer.sharedMaterial = obstacleMaterial;
+
+        return newObstacle;
     }
 
     #endregion
