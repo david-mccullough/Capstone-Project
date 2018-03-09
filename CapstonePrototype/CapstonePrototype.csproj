@@ -83,6 +83,16 @@
     <Compile Include="Assets\Code\Scripts\Map\MapGenerator.cs" />
     <Compile Include="Assets\Code\Scripts\Map\Node.cs" />
     <Compile Include="Assets\Code\Scripts\Map\TileType.cs" />
+    <Compile Include="Assets\Code\Scripts\Menu and UI\CreditsMenu.cs" />
+    <Compile Include="Assets\Code\Scripts\Menu and UI\FlexibleUI.cs" />
+    <Compile Include="Assets\Code\Scripts\Menu and UI\FlexibleUI\FlexibleUIButton.cs" />
+    <Compile Include="Assets\Code\Scripts\Menu and UI\FlexibleUIData.cs" />
+    <Compile Include="Assets\Code\Scripts\Menu and UI\MainMenu.cs" />
+    <Compile Include="Assets\Code\Scripts\Menu and UI\NewGameMenu.cs" />
+    <Compile Include="Assets\Code\Scripts\Menu and UI\NotificationCenter.cs" />
+    <Compile Include="Assets\Code\Scripts\Menu and UI\OptionsMenu.cs" />
+    <Compile Include="Assets\Code\Scripts\Menu and UI\SlotPanel.cs" />
+    <Compile Include="Assets\Code\Scripts\Menu and UI\SystemsSettings.cs" />
     <Compile Include="Assets\Code\Scripts\PerlinNoise.cs" />
     <Compile Include="Assets\Code\Scripts\Unit.cs" />
     <Compile Include="Assets\Code\Scripts\Utility.cs" />

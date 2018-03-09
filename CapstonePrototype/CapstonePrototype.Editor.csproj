@@ -120,6 +120,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Code\Editor\FlexibleUIEditor.cs" />
     <Compile Include="Assets\Code\Editor\MapEditor.cs" />
   </ItemGroup>
   <ItemGroup>

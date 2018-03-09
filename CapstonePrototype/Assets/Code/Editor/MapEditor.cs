@@ -1,9 +1,8 @@
-﻿using System.Collections;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 
 [CustomEditor(typeof(MapGenerator))]
-public class CS_MapEditor : Editor {
+public class MapEditor : Editor {
 
     public override void OnInspectorGUI() {
         base.OnInspectorGUI();
@@ -16,7 +15,6 @@ public class CS_MapEditor : Editor {
             map.GenerateMap(GameController.factions, 1);
         }
         
-
     }
 
 }
