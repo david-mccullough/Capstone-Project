@@ -15,7 +15,7 @@
     }
 
     public PerlinNoise(int width, int height, int seed) :
-        this(width, height, seed, 10f) {
+        this(width, height, seed, 101f) {
     }
 
     public PerlinNoise (int width, int height, int seed, float scale) {
@@ -30,8 +30,8 @@
     }
 
     public float GetValueAt(float x, float y) {
-        float xCoord = ((float) x / width) * scale + xOffset;
-        float yCoord = ((float) y / height) * scale + yOffset;
+        float xCoord = ( x / (float)width) * scale + xOffset;
+        float yCoord = ( y / (float)height) * scale + yOffset;
         return UnityEngine.Mathf.PerlinNoise(xCoord, yCoord);
     }
 

@@ -7,9 +7,11 @@ public class Faction {
 
     public string name;
     public Color color;
-    private List<Unit> myUnits;
+    private List<Unit> myUnits = new List<Unit>();
     private int startingNumUnits;
     private int numActiveUnits;
+    [SerializeField]
+    private bool IS_AI = false;
 
     public bool isActive;
 
@@ -31,8 +33,16 @@ public class Faction {
         FactionDeactivateEvent = null;
     }
 
+    public Faction(string name, Color color, int numUnits, bool isAI)
+        : this(name, color, numUnits) {
+        this.IS_AI = isAI;
+    }
+
     public void AddUnit(Unit unit) {
-        //myUnits.Add(unit);
+        if (myUnits == null) {
+            myUnits = new List<Unit>();
+        }
+        myUnits.Add(unit);
         numActiveUnits++;
         isActive = true;
     }
@@ -45,6 +55,10 @@ public class Faction {
             SetIsActive(false);
             FactionDeactivateEvent();
         }
+    }
+
+    public bool IsAI() {
+        return IS_AI;
     }
 
     public bool IsActive() {

@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEditor;
 
-[CustomEditor(typeof(MapGenerator))]
+[CustomEditor(typeof(FlexibleUIEditor))]
 public class FlexibleUIEditor : Editor {
 
     public override void OnInspectorGUI() {

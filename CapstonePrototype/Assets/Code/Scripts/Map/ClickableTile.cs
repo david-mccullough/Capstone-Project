@@ -31,7 +31,7 @@ public class ClickableTile : MonoBehaviour {
             int radius = (GetValue() / 10) - 1;
             Map.Coord[] coords = map.GetCellsInCircle(this.pos, radius, true).ToArray();
             foreach (Map.Coord c in coords) {
-                ClickableTile tempTile = map.tiles[c.x, c.y].GetComponent<ClickableTile>();
+                ClickableTile tempTile = map.tiles[c.x, c.y];
                 tempTile.SetOwner(faction);
                 tempTile.SetValue(1);
             }

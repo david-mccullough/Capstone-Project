@@ -6,12 +6,14 @@ using UnityEngine.UI;
 enum ControllerState {
     idle = 0,
     drawing = 1,
+    ai = 2
 }
 
 public class GameController : MonoBehaviour {
 
     ControllerState state = ControllerState.idle;
 
+    public AIController.AISkill aiSkill = AIController.AISkill.medium;
     public static Faction[] factions;
     public List<Faction> activeFactions;
     private Queue<Faction> factionQueue = new Queue<Faction>();
@@ -60,6 +62,7 @@ public class GameController : MonoBehaviour {
         uiText.text = currentFaction.name + " turn (" + turnIndex + ").";
 
         ui = FindObjectOfType<GameUI>();
+        AIController.Default.SetMap(map);
 
         /*foreach (Faction f in activeFactions) {
             f.FactionDeactivateEvent += OnFactionDeactivate;
@@ -91,7 +94,14 @@ public class GameController : MonoBehaviour {
             break;
 
             case ControllerState.drawing:
+                if (selectedUnit == null) {
+                    state = ControllerState.idle;
+                }
                 DrawPath();
+            break;
+
+            case ControllerState.ai:
+                state = ControllerState.idle;
             break;
         }
         
@@ -151,6 +161,16 @@ public class GameController : MonoBehaviour {
         //currentFaction = newFaction;
         nextTurnEvent(currentFaction);
         Debug.Log("FACTION" + currentFaction.name);
+
+        if (currentFaction.IsAI()) {
+            Unit u = currentFaction.GetUnits()[0]; //For now, just select one and only unit
+            SelectUnit(u);
+            AIController.Default.SetUnit(u);
+            var path = AIController.Default.MakeDecision(aiSkill);
+            selectedUnit.SetPath(path);
+            state = ControllerState.ai;
+        }
+
         return currentFaction;
     }
 
@@ -190,7 +210,7 @@ public class GameController : MonoBehaviour {
              if (drawPathStack.Count-1 == selectedUnit.GetMoveSpeed()) {
                 //Is this a valid path that leads to a destination tile?
                 Node finalNode = drawPathStack.Peek();
-                if (map.tiles[finalNode.pos.x, finalNode.pos.y].GetComponent<ClickableTile>().IsAvailable()) {
+                if (map.tiles[finalNode.pos.x, finalNode.pos.y].IsAvailable()) {
                     //Feed our unit this path
                     Debug.Log("sending drawn path to unit");
                     List<Node> path = new List<Node>(drawPathStack);
@@ -240,7 +260,7 @@ public class GameController : MonoBehaviour {
     void ClearDrawPath() {
         while (drawPathStack.Count > 0) {
             Node popped = drawPathStack.Pop();
-            ClickableTile tile = map.tiles[popped.pos.x, popped.pos.y].GetComponent<ClickableTile>();
+            ClickableTile tile = map.tiles[popped.pos.x, popped.pos.y];
             if (!tile.IsAvailable()) {
                 tile.Highlight(false);
             }
@@ -302,7 +322,7 @@ public class GameController : MonoBehaviour {
                 //queue unit's position to drawPath
                 drawPathStack.Clear();
                 drawPathStack.Push(map.graph[u.pos.x,u.pos.y]);
-                //map.tiles[u.pos.x, u.pos.y].GetComponent<ClickableTile>().Highlight(true);
+                //map.tiles[u.pos.x, u.pos.y].Highlight(true);
                 state = ControllerState.drawing;
             }
         }

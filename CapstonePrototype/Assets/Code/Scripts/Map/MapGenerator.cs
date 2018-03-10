@@ -38,7 +38,7 @@ public class MapGenerator: MonoBehaviour {
         currentMap = maps[mapIndex];
         System.Random prng = new System.Random(seed);
         
-        currentMap.tiles = new Transform[currentMap.size.x, currentMap.size.y];
+        currentMap.tiles = new ClickableTile[currentMap.size.x, currentMap.size.y];
 
         allTileCoords = new List<Map.Coord>();
         for (int x = 0; x < currentMap.size.x; x++) {
@@ -76,10 +76,8 @@ public class MapGenerator: MonoBehaviour {
                 // Set tile's parent to GenratedMap GO
                 newTile.parent = mapHolder;
 
-                //Debug.Log(x + "," + y);
-                currentMap.tiles[x, y] = newTile;
                 ClickableTile ct = newTile.GetComponent<ClickableTile>();
-                //ct.valueText = ui;
+                currentMap.tiles[x, y] = ct;
                 ct.pos = new Map.Coord(x, y);
 
                 ct.SetValue((int)prng.Next(1,currentMap.maxTileValue));
@@ -221,9 +219,10 @@ public class MapGenerator: MonoBehaviour {
         //Step through 2D perlin noise graph
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                //If value is less thanor equal to our upper bound, add this point as a coord
+                //If value is less than or equal to our upper bound, add this point as a coord
                 if (perlin.GetValueAt((float)i / width * perlin.GetWidth(), (float)j / height * perlin.GetHeight()) <= upperBound) {
                     coords.Add(new Map.Coord(i, j));
+                   
                 }
             }
         }
@@ -289,7 +288,7 @@ public class MapGenerator: MonoBehaviour {
         newObstacle.localScale = new Vector3((1 - outlinePercent) * tileSize, obstacleHeight, (1 - outlinePercent) * tileSize);
 
         // make tiles that obstacles occupy unwalkable
-        currentMap.tiles[randomCoord.x, randomCoord.y].GetComponent<ClickableTile>().SetWalkability(false);
+        currentMap.tiles[randomCoord.x, randomCoord.y].SetWalkability(false);
 
         //adjust color
         Renderer obstacleRenderer = newObstacle.GetComponent<Renderer>();

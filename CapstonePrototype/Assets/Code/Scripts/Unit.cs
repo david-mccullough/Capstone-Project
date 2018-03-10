@@ -47,8 +47,6 @@ public class Unit : MonoBehaviour {
         this.pos = pos;
         this.faction = faction;
 
-        faction.AddUnit(this);
-
         pos.x = (int)transform.position.x;
         pos.y = (int)transform.position.z;
 
@@ -60,7 +58,8 @@ public class Unit : MonoBehaviour {
 
         Debug.Log("inited");
 
-        map.tiles[pos.x, pos.y].GetComponent<ClickableTile>().SetOccupationStatus(true);
+        map.tiles[pos.x, pos.y].SetOccupationStatus(true);
+        faction.AddUnit(this);
     }
 
     void Update() {
@@ -96,7 +95,7 @@ public class Unit : MonoBehaviour {
     }
 
     public List<Map.Coord> GetAvailableTileOptions(Node pos, int distance) {
-        // This is pretty inefficent... doing BFS twice and subtracting one from the other
+        // This is pretty inefficient... doing BFS twice and subtracting one from the other
         // to get the outer ring of available node coords
         HashSet<Map.Coord> outer = new HashSet<Map.Coord>(map.BreadthFirst(pos, distance, this));
         if (outer.Count < 1) {
@@ -130,12 +129,11 @@ public class Unit : MonoBehaviour {
             }
         }
 
-        Debug.Log("returning available options");
         return new List<Map.Coord>(C);
     }
 
     public void SetPath(List<Node> newPath) {
-        map.tiles[pos.x, pos.y].GetComponent<ClickableTile>().SetOccupationStatus(false);
+        map.tiles[pos.x, pos.y].SetOccupationStatus(false);
 
         map.ResetTileAvailability();
         currentPath = newPath;
@@ -165,7 +163,7 @@ public class Unit : MonoBehaviour {
         pos.y = currentPath[1].pos.y;
 
         // Add our remaining movement to current tile
-        ClickableTile currentTile = map.tiles[pos.x, pos.y].GetComponent<ClickableTile>();
+        ClickableTile currentTile = map.tiles[pos.x, pos.y];
         currentTile.AddToValue(moveSpeed - remainingMovement + 1);
         if (currentTile.CheckForCapture(faction)) {
             // This is the last tile, so set out movespeed to one
@@ -191,7 +189,7 @@ public class Unit : MonoBehaviour {
 
             // We are at our destinationa and we are out of moves, so end our turn
             if (remainingMovement <= 0) {
-                Debug.Log("Unit out of path and moves! Ending turn.");
+                //Debug.Log("Unit out of path and moves! Ending turn.");
                 FinishTurn();
             }
         }
@@ -208,7 +206,7 @@ public class Unit : MonoBehaviour {
         turnStartPos = pos;
 
         //Let our resting tile know we have occupied it
-        var currentTile = map.tiles[pos.x, pos.y].GetComponent<ClickableTile>();
+        var currentTile = map.tiles[pos.x, pos.y];
         currentTile.SetOccupationStatus(true);
 
         // Send out event message that our turn is complete
@@ -235,7 +233,7 @@ public class Unit : MonoBehaviour {
         StartCoroutine(FadeOut(0.1f));
         faction.RemoveUnit(this); //this should trigger faction to report that its lost on the following turn
 
-        var currentTile = map.tiles[pos.x, pos.y].GetComponent<ClickableTile>();
+        var currentTile = map.tiles[pos.x, pos.y];
         currentTile.SetOccupationStatus(false);
         rend.enabled = false;
     }

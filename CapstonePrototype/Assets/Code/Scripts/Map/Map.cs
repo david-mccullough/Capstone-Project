@@ -9,7 +9,7 @@ public class Map {
     public int seed;
     public int maxTileValue;
     public Node[,] graph;
-    public Transform[,] tiles; //tilePrefabs with ClickableTile script
+    public ClickableTile[,] tiles; //tilePrefabs with ClickableTile script
 
     [Range(0, 1)]
     public float obstaclePercent;
@@ -62,7 +62,7 @@ public class Map {
 
     public int GetTileValue(Coord target) {
 
-        ClickableTile ct = tiles[target.x, target.y].GetComponent<ClickableTile>();
+        ClickableTile ct = tiles[target.x, target.y];
         int value = ct.GetValue();
         //Debug.Log("Tile value at " + target + " is " + value);
         return value;
@@ -92,7 +92,7 @@ public class Map {
 
         // Is this tile walkable, not occupied, or captured by an opponent?
         bool canEnter = true;
-        var targetTile = tiles[pos.x, pos.y].GetComponent<ClickableTile>();
+        var targetTile = tiles[pos.x, pos.y];
         string ownerName = targetTile.GetOwner().name;
         canEnter = (targetTile.IsWalkable()
                     && (!targetTile.IsOccupied() || targetTile.pos == u.pos)
@@ -219,14 +219,13 @@ public class Map {
 
         while (nodeQueue.Count > 0 && failSafe < 10000) {
             failSafe++;
-            Debug.Log("fs " + failSafe);
             if (nodeQueue.Peek() != null) {
                 Node current = nodeQueue.Dequeue();
 
                 nodes.Add(current.pos);
 
                 foreach (Node child in current.neighbours) {
-                    var currentTile = tiles[child.pos.x, child.pos.y].GetComponent<ClickableTile>();
+                    var currentTile = tiles[child.pos.x, child.pos.y];
                     if (UnitCanEnterTile(currentTile.pos, unit)
                         && !nodeQueue.Contains(child)) {
                         nextElementsToDepthIncrease++;
@@ -243,7 +242,7 @@ public class Map {
                 }
 
                 /*foreach (Node child in current.neighbours) {
-                    var currentTile = tiles[child.pos.x, child.pos.y].GetComponent<ClickableTile>();
+                    var currentTile = tiles[child.pos.x, child.pos.y];
                     //if (currentTile.IsWalkable() && (!currentTile.IsOccupied() || current.pos == parent.pos)) {
                     if (UnitCanEnterTile(currentTile.pos, unit)) {
                         nodeQueue.Enqueue(child);
@@ -380,13 +379,13 @@ public class Map {
     public void MakeTilesAvailable(Coord[] coords) {
         if (coords.Length == 0) { return; }
         foreach (Coord c in coords) {
-            tiles[c.x, c.y].GetComponent<ClickableTile>().SetAvailability(true);
+            tiles[c.x, c.y].SetAvailability(true);
         }
     }
 
     public void ResetTileAvailability() {
-        foreach (Transform tile in tiles) {
-            tile.GetComponent<ClickableTile>().SetAvailability(false);
+        foreach (ClickableTile tile in tiles) {
+            tile.SetAvailability(false);
         }
     }
 
