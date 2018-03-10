@@ -16,4 +16,4 @@
 # Unit Temp Files #
 UnityLockFile
 
-dir_to_ignore/Builds
+Builds/
