@@ -8,8 +8,9 @@ public class Map {
     public Coord size;
     public int seed;
     public int maxTileValue;
-    public Node[,] graph;
+    public Node[,] nodes;
     public ClickableTile[,] tiles; //tilePrefabs with ClickableTile script
+    public Graph graph;
 
     [Range(0, 1)]
     public float obstaclePercent;
@@ -124,12 +125,12 @@ public class Map {
         // Setup the "Q" -- the list of nodes we haven't checked yet.
         List<Node> unvisited = new List<Node>();
 
-        Node source = graph[
+        Node source = nodes[
                             start.x,
                             start.y
                             ];
 
-        Node target = graph[
+        Node target = nodes[
                             pos.x,
                             pos.y
                             ];
@@ -141,7 +142,7 @@ public class Map {
         // we don't know any better right now. Also, it's possible
         // that some nodes CAN'T be reached from the source,
         // which would make INFINITY a reasonable value
-        foreach (Node v in graph) {
+        foreach (Node v in nodes) {
             if (v != source) {
                 dist[v] = Mathf.Infinity;
                 prev[v] = null;
@@ -267,12 +268,12 @@ public class Map {
                 // If filled include values less than radius squared
                 if (isFilled) {
                     if (LHS <= radius*radius) {
-                        nodes.Add(graph[x,y].pos);
+                        nodes.Add(nodes[x,y].pos);
                     }
                 }
                 else {
                     if (LHS == radius*radius) {
-                        nodes.Add(graph[x, y].pos);
+                        nodes.Add(nodes[x, y].pos);
                     }
                 }
             }
@@ -304,7 +305,7 @@ public class Map {
                     int LHS = (int)Mathf.Floor((x - source.x) * (x - source.x) + (y - source.y) * (y - source.y));
 
                     if (LHS <= radius * radius) {
-                        points.Add(graph[x, y].pos);
+                        points.Add(nodes[x, y].pos);
                     }
                 }
             }

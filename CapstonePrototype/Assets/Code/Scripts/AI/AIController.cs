@@ -43,7 +43,7 @@ public class AIController {
 
     private void UpdateInformation() {
         currentTile = map.tiles[unit.pos.x, unit.pos.y];
-        currentNode = map.graph[unit.pos.x, unit.pos.y];
+        currentNode = map.nodes[unit.pos.x, unit.pos.y];
         currentValue = currentTile.GetValue();
         availableTiles = unit.GetAvailableTileOptions(currentNode, unit.GetMoveSpeed());
         paths.Clear();

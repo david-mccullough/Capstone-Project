@@ -228,7 +228,7 @@ public class GameController : MonoBehaviour {
         if (MouseCast(out hit)) {
             if (hit.transform.tag == "Tile") {
                 ClickableTile tempTile = hit.transform.GetComponent<ClickableTile>();
-                Node tempNode = map.graph[tempTile.pos.x, tempTile.pos.y];
+                Node tempNode = map.nodes[tempTile.pos.x, tempTile.pos.y];
 
                 //Is the tile an walkable neighbor tile?
                 if (NodeIsNeighbour(currentNode, tempNode) && map.UnitCanEnterTile(tempNode.pos, selectedUnit)) {
@@ -308,7 +308,7 @@ public class GameController : MonoBehaviour {
                 // hold refernece for current unit
                 selectedUnit = u;
                 // Get the frontier of available move options...
-                Map.Coord[] coordOptions = u.GetAvailableTileOptions(map.graph[u.pos.x, u.pos.y], u.GetRemainingMoves()).ToArray();
+                Map.Coord[] coordOptions = u.GetAvailableTileOptions(map.nodes[u.pos.x, u.pos.y], u.GetRemainingMoves()).ToArray();
 
                 // ...and make those tiles walkable
                 if (coordOptions.Length <= 0) {
@@ -321,7 +321,7 @@ public class GameController : MonoBehaviour {
 
                 //queue unit's position to drawPath
                 drawPathStack.Clear();
-                drawPathStack.Push(map.graph[u.pos.x,u.pos.y]);
+                drawPathStack.Push(map.nodes[u.pos.x,u.pos.y]);
                 //map.tiles[u.pos.x, u.pos.y].Highlight(true);
                 state = ControllerState.drawing;
             }

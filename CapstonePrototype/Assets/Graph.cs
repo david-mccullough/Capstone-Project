@@ -1,9 +1,9 @@
-﻿using UnityEngine;
+﻿// Graph.cs and associated scripts are modified from code by Jasper Flick @ catlikecoding.com
+using UnityEngine;
 
-public class Graph : MonoBehaviour {
+public class Graph {
 
-	public Transform pointPrefab;
-
+    private Transform pointPrefab;
 	[Range(10, 100)]
 	private int resolution = 10;
 
@@ -11,22 +11,34 @@ public class Graph : MonoBehaviour {
 
 	Transform[] points;
 
-	void Awake () {
-		float step = 2f / resolution;
-		Vector3 scale = Vector3.one * step;
-		Vector3 position;
-		position.y = 0f;
-		position.z = 0f;
-		points = new Transform[resolution * resolution];
-		for (int i = 0; i < points.Length; i++) {
-			Transform point = Instantiate(pointPrefab);
-			point.localScale = scale;
-			point.SetParent(transform, false);
-			points[i] = point;
-		}
-	}
+    public Graph(Transform pointPrefab, int resolution) {
+        this.pointPrefab = pointPrefab;
+        this.resolution = resolution;
+        //Build();
+    }
 
-	void Update () {
+    public Graph(Transform[] points, int resolution, GraphFunctionName function) {
+        this.resolution = resolution;
+        this.points = points;
+        this.function = function;
+    }
+
+    /*void Build() {
+        float step = 2f / resolution;
+        Vector3 scale = Vector3.one * step;
+        Vector3 position;
+        position.y = 0f;
+        position.z = 0f;
+        points = new Transform[resolution * resolution];
+        for (int i = 0; i < points.Length; i++) {
+            Transform point = Instantiate(pointPrefab);
+            point.localScale = scale;
+            point.SetParent(transform, false);
+            points[i] = point;
+        }
+    }*/
+
+    public void UpdateGraph () {
 		float t = Time.time;
 		GraphFunction f = functions[(int)function];
 		float step = 2f / resolution;
@@ -34,8 +46,10 @@ public class Graph : MonoBehaviour {
 			float v = (z + 0.5f) * step - 1f;
 			for (int x = 0; x < resolution; x++, i++) {
 				float u = (x + 0.5f) * step - 1f;
-				points[i].localPosition = f(u, v, t);
-			}
+				Vector3 tempVector = f(u, v, t);
+                points[i].localPosition = new Vector3(points[i].localPosition.x, tempVector.y, points[i].localPosition.z);
+
+            }
 		}
 	}
 
@@ -89,7 +103,7 @@ public class Graph : MonoBehaviour {
 		Vector3 p;
 		float d = Mathf.Sqrt(x * x + z * z);
 		p.x = x;
-		p.y = Mathf.Sin(pi * (4f * d - t));
+		p.y = Mathf.Sin(pi * (d - t));
 		p.y /= 1f + 10f * d;
 		p.z = z;
 		return p;

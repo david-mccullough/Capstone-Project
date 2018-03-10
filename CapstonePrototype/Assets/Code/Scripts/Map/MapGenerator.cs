@@ -33,20 +33,24 @@ public class MapGenerator: MonoBehaviour {
    
     #region Main Methods
 
+    /*void Update() {
+        currentMap.graph.UpdateGraph();
+    }*/
+
     public Map GenerateMap(Faction[] factions, int seed) {
 
         currentMap = maps[mapIndex];
         System.Random prng = new System.Random(seed);
         
         currentMap.tiles = new ClickableTile[currentMap.size.x, currentMap.size.y];
-
+        
         allTileCoords = new List<Map.Coord>();
         for (int x = 0; x < currentMap.size.x; x++) {
             for (int y = 0; y < currentMap.size.y; y++) {
                 allTileCoords.Add(new Map.Coord(x, y));
             }
         }
-        shuffledTileCoords = new Queue<Map.Coord>(Utility.ShuffleArray(allTileCoords.ToArray(), seed));
+        shuffledTileCoords = new Queue<Map.Coord>(Utility.ShuffleArray(allTileCoords.ToArray(), seed));        
 
         //Get corners (will be where we spawn units)
         List<Map.Coord> corners = new List<Map.Coord>();
@@ -64,6 +68,7 @@ public class MapGenerator: MonoBehaviour {
         Transform mapHolder = new GameObject(holderName).transform;
         mapHolder.parent = transform;
 
+        List<Transform> tileTransforms = new List<Transform>(currentMap.size.x * currentMap.size.y);
         // Create tiles
         for (int x = 0; x < currentMap.size.x; x++) {
             for (int y = 0; y < currentMap.size.y; y++) {
@@ -75,6 +80,7 @@ public class MapGenerator: MonoBehaviour {
                 newTile.localScale = new Vector3((1 - outlinePercent) * tileSize, 1f, (1 - outlinePercent) * tileSize);//Vector3.one * (1 - outlinePercent) * tileSize;
                 // Set tile's parent to GenratedMap GO
                 newTile.parent = mapHolder;
+                tileTransforms.Add(newTile);
 
                 ClickableTile ct = newTile.GetComponent<ClickableTile>();
                 currentMap.tiles[x, y] = ct;
@@ -84,6 +90,7 @@ public class MapGenerator: MonoBehaviour {
                 ct.map = currentMap;
             }
         }
+        currentMap.graph = new Graph(tileTransforms.ToArray(), currentMap.size.x, GraphFunctionName.Ripple);
 
         #region Obstacle Generation
         bool[,] obstacleMap = new bool[(int)currentMap.size.x, (int)currentMap.size.y];
@@ -103,7 +110,8 @@ public class MapGenerator: MonoBehaviour {
             if (c != currentMap.Center && MapIsFloodable(obstacleMap, currentObstacleCount) && !corners.Contains(c)) {
                 //Create obstacle
                 Transform newObstacle = CreateObstacle(c, perlin.GetValueAt(c.x, c.y));
-                newObstacle.parent = mapHolder;
+                // Parent obstacle to tile sharing coord position
+                newObstacle.parent = currentMap.tiles[c.x,c.y].transform;
             }
             else {
                 obstacleMap[c.x, c.y] = false;
@@ -131,20 +139,21 @@ public class MapGenerator: MonoBehaviour {
         }
 
         GeneratePathfindingGraph(currentMap);
+        
 
         return currentMap;
     }
 
     void GeneratePathfindingGraph(Map map) {
         // Initialize the array
-        map.graph = new Node[map.size.x, map.size.y];
+        map.nodes = new Node[map.size.x, map.size.y];
 
         // Initialize a Node for each spot in the array
         for (int x = 0; x < map.size.x; x++) {
             for (int y = 0; y < map.size.y; y++) {
-                map.graph[x, y] = new Node();
-                map.graph[x, y].pos.x = x;
-                map.graph[x, y].pos.y = y;
+                map.nodes[x, y] = new Node();
+                map.nodes[x, y].pos.x = x;
+                map.nodes[x, y].pos.y = y;
             }
         }
 
@@ -154,39 +163,39 @@ public class MapGenerator: MonoBehaviour {
 
                 // This is the 4-way connection version:
                 if (x > 0)
-                    map.graph[x, y].neighbours.Add(map.graph[x - 1, y]);
+                    map.nodes[x, y].neighbours.Add(map.nodes[x - 1, y]);
                 if (x < map.size.x - 1)
-                    map.graph[x, y].neighbours.Add(map.graph[x + 1, y]);
+                    map.nodes[x, y].neighbours.Add(map.nodes[x + 1, y]);
                 if (y > 0)
-                    map.graph[x, y].neighbours.Add(map.graph[x, y - 1]);
+                    map.nodes[x, y].neighbours.Add(map.nodes[x, y - 1]);
                 if (y < map.size.y - 1)
-                    map.graph[x, y].neighbours.Add(map.graph[x, y + 1]);
+                    map.nodes[x, y].neighbours.Add(map.nodes[x, y + 1]);
 
                 #region other grid types
                 // This is the 8-way connection version (allows diagonal movement)
                 // Try left
                 /*              if(x > 0) {
-                                    graph[x,y].neighbours.Add( graph[x-1, y] );
+                                    nodes[x,y].neighbours.Add( nodes[x-1, y] );
                                     if(y > 0)
-                                        graph[x,y].neighbours.Add( graph[x-1, y-1] );
+                                        nodes[x,y].neighbours.Add( nodes[x-1, y-1] );
                                     if(y < mapSizeY-1)
-                                        graph[x,y].neighbours.Add( graph[x-1, y+1] );
+                                        nodes[x,y].neighbours.Add( nodes[x-1, y+1] );
                                 }
 
                                 // Try Right
                                 if(x < mapSizeX-1) {
-                                    graph[x,y].neighbours.Add( graph[x+1, y] );
+                                    nodes[x,y].neighbours.Add( nodes[x+1, y] );
                                     if(y > 0)
-                                        graph[x,y].neighbours.Add( graph[x+1, y-1] );
+                                        nodes[x,y].neighbours.Add( nodes[x+1, y-1] );
                                     if(y < mapSizeY-1)
-                                        graph[x,y].neighbours.Add( graph[x+1, y+1] );
+                                        nodes[x,y].neighbours.Add( nodes[x+1, y+1] );
                                 }
 
                                 // Try straight up and down
                                 if(y > 0)
-                                    graph[x,y].neighbours.Add( graph[x, y-1] );
+                                    nodes[x,y].neighbours.Add( nodes[x, y-1] );
                                 if(y < mapSizeY-1)
-                                    graph[x,y].neighbours.Add( graph[x, y+1] );
+                                    nodes[x,y].neighbours.Add( nodes[x, y+1] );
                 */
 
                 // This also works with 6-way hexes and n-way variable areas (like EU4)
@@ -216,7 +225,7 @@ public class MapGenerator: MonoBehaviour {
         int width = currentMap.size.x;
         int height = currentMap.size.y;
 
-        //Step through 2D perlin noise graph
+        //Step through 2D perlin noise nodes
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
                 //If value is less than or equal to our upper bound, add this point as a coord
