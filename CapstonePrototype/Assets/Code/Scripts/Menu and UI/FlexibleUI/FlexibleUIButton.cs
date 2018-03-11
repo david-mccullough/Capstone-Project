@@ -13,7 +13,10 @@ public class FlexibleUIButton : FlexibleUI {
         base.OnSkinUI();
 
         image = GetComponent<Image>();
-        icon = transform.Find("Icon").GetComponent<Image>();
+        Transform go = transform.Find("Icon");
+        if (go != null) {
+            icon = go.GetComponent<Image>();
+        }
         button = GetComponent<Button>();
 
         button.transition = Selectable.Transition.SpriteSwap;
