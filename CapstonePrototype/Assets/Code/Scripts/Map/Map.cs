@@ -380,13 +380,21 @@ public class Map {
     public void MakeTilesAvailable(Coord[] coords) {
         if (coords.Length == 0) { return; }
         foreach (Coord c in coords) {
-            tiles[c.x, c.y].SetAvailability(true);
+            if (c != null) {
+                tiles[c.x, c.y].SetAvailability(true);
+            }
         }
     }
 
     public void ResetTileAvailability() {
         foreach (ClickableTile tile in tiles) {
             tile.SetAvailability(false);
+        }
+    }
+
+    public void ResetTileDrawPath() {
+        foreach (ClickableTile tile in tiles) {
+            tile.DrawHighlight(false, .01f);
         }
     }
 

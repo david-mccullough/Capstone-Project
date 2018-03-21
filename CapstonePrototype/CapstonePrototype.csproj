@@ -106,6 +106,8 @@
     <Compile Include="Assets\Graph.cs" />
     <Compile Include="Assets\GraphFunction.cs" />
     <Compile Include="Assets\GraphFunctionName.cs" />
+    <Compile Include="Assets\Scenes\DisplayHelpText.cs" />
+    <Compile Include="Assets\Scenes\HelpText.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Code\Shaders\CustomOutline.shader" />

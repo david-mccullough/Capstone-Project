@@ -218,6 +218,9 @@ public class GameController : MonoBehaviour {
                     selectedUnit.SetPath(path);
                 }
             }
+            else {
+                map.ResetTileDrawPath();
+            }
             ClearDrawPath();
             return;
         }
@@ -230,7 +233,7 @@ public class GameController : MonoBehaviour {
                 ClickableTile tempTile = hit.transform.GetComponent<ClickableTile>();
                 Node tempNode = map.nodes[tempTile.pos.x, tempTile.pos.y];
 
-                //Is the tile an walkable neighbor tile?
+                //Is the tile a walkable neighbor tile?
                 if (NodeIsNeighbour(currentNode, tempNode) && map.UnitCanEnterTile(tempNode.pos, selectedUnit)) {
                     //Is it the previous path node?
                     if (drawPathStack.Contains(tempNode)) {
@@ -238,17 +241,38 @@ public class GameController : MonoBehaviour {
                         Node popped = drawPathStack.Pop();
                         ClickableTile tile = map.tiles[popped.pos.x, popped.pos.y].GetComponent<ClickableTile>();
                         Debug.Log(tile.GetValue());
-                        if (!tile.IsAvailable()) {
-                            tile.Highlight(false);
-                        }
+                        tile.DrawHighlight(false, .01f);
+                        
                         tile.SetValueText(tile.GetValue());
+
+                        //adjust available tiles
+                        var coordOptions = selectedUnit.GetAvailableTileOptions(tempNode, selectedUnit.GetMoveSpeed() - drawPathStack.Count+ 1);
+                        map.ResetTileAvailability();
+                        List<Map.Coord> coordList = new List<Map.Coord>();
+                        for (int i = 0; i < selectedUnit.coordOptions.Length; i++) {
+                            if (coordOptions.Contains(selectedUnit.coordOptions[i])) {
+                                coordList.Add(selectedUnit.coordOptions[i]);
+                            }
+                        }
+                        map.MakeTilesAvailable(coordList.ToArray());
                     }
                     //If not, we can push this neighbor is we have remianing moves, one step closer to destination
                     else if (drawPathStack.Count - 1 < selectedUnit.GetMoveSpeed()) {
                         {
+                            //adjust available tiles
+                            var coordOptions = selectedUnit.GetAvailableTileOptions(tempNode,  selectedUnit.GetMoveSpeed() - drawPathStack.Count);
+                            map.ResetTileAvailability();
+                            List<Map.Coord> coordList = new List<Map.Coord>();
+                            for (int i = 0; i < selectedUnit.coordOptions.Length; i++) {
+                                if (coordOptions.Contains(selectedUnit.coordOptions[i])) {
+                                    coordList.Add(selectedUnit.coordOptions[i]);
+                                }
+                            }
+                            map.MakeTilesAvailable(coordList.ToArray());
+
                             drawPathStack.Push(tempNode);
                             //highlight tempTile? show its part of path
-                            tempTile.Highlight(true);
+                            tempTile.DrawHighlight(true, .02f);
                             tempTile.SetValueText(tempTile.GetValue() + drawPathStack.Count-1);
                         }
                     }
@@ -277,9 +301,6 @@ public class GameController : MonoBehaviour {
                 if (hit.transform.tag == "Tile") {
                     ClickableTile tile = hit.transform.GetComponent<ClickableTile>();
                     //Tile is available, generate path to it and give the path to our unit
-                    if (tile.IsAvailable()) {
-                        //selectedUnit.SetPath(map.GeneratePathTo(selectedUnit.pos, tile.pos, selectedUnit));
-                    }
                 }
                 else if (hit.transform.tag == "Unit" && gameOver != true) {
                     SelectUnit(hit.transform.GetComponent<Unit>());
@@ -308,15 +329,15 @@ public class GameController : MonoBehaviour {
                 // hold refernece for current unit
                 selectedUnit = u;
                 // Get the frontier of available move options...
-                Map.Coord[] coordOptions = u.GetAvailableTileOptions(map.nodes[u.pos.x, u.pos.y], u.GetRemainingMoves()).ToArray();
+                selectedUnit.coordOptions = u.GetAvailableTileOptions(map.nodes[u.pos.x, u.pos.y], u.GetRemainingMoves()).ToArray();
 
                 // ...and make those tiles walkable
-                if (coordOptions.Length <= 0) {
+                if (u.coordOptions.Length <= 0) {
                     // Kill unit if no desitnation options!
                     selectedUnit.Elimnate();
                 }
                 else {
-                    map.MakeTilesAvailable(coordOptions);
+                    map.MakeTilesAvailable(u.coordOptions);
                 }
 
                 //queue unit's position to drawPath

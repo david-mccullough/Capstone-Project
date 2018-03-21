@@ -16,6 +16,7 @@ public class Unit : MonoBehaviour {
 
     // Our pathfinding info.  Null if we have no destination ordered.
     public List<Node> currentPath = null;
+    public Map.Coord[] coordOptions;
 
     // How far this unit can move in one turn
     [SerializeField]
@@ -165,6 +166,7 @@ public class Unit : MonoBehaviour {
         // Add our remaining movement to current tile
         ClickableTile currentTile = map.tiles[pos.x, pos.y];
         currentTile.AddToValue(moveSpeed - remainingMovement + 1);
+        currentTile.DrawHighlight(false, .01f);
         if (currentTile.CheckForCapture(faction)) {
             // This is the last tile, so set out movespeed to one
             if (currentTile.pos == currentPath[currentPath.Count - 1].pos) {

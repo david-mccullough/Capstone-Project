@@ -14,15 +14,22 @@ public class ClickableTile : MonoBehaviour {
     private bool isWalkable = true;
     private bool isAvailable = false;
     private bool isHighlighted = false;
+    private bool isDrawHighlighted = false;
     private Faction owner = new Faction("NULL");
 
     [SerializeField]
     private GameObject top;
     private Renderer[] renderers = new Renderer[2];
 
+    public Color defaultColor = new Color(.3f, .3f, .3f);
+    private Color drawColor = new Color(.35f, .35f, .35f);
+    private Color myColor;
+
     void Start() {
         renderers[0] = GetComponent<Renderer>();
         renderers[1] = top.GetComponent<Renderer>();
+
+        myColor = defaultColor;
     }
 
     public bool CheckForCapture(Faction faction) {
@@ -78,6 +85,7 @@ public class ClickableTile : MonoBehaviour {
     public void SetOwner(Faction faction) {
         owner = faction;
         StartCoroutine(FadeToColor(faction.color, .02f));
+        myColor = faction.color;
     }
 
     public void SetAvailability(bool boolean) {
@@ -123,6 +131,25 @@ public class ClickableTile : MonoBehaviour {
         else {
             return;
         }        
+    }
+
+    public void DrawHighlight(bool boolean, float time) {
+        if (boolean != isDrawHighlighted) {
+            
+            Renderer rend = top.gameObject.GetComponent<Renderer>();
+            if (boolean) {
+                Color tempColor = drawColor + myColor;
+                StartCoroutine(FadeToColor(tempColor, time));
+                isDrawHighlighted = true;
+            }
+            else {
+                StartCoroutine(FadeToColor(myColor, time));
+                isDrawHighlighted = false;
+            }
+        }
+        else {
+            return;
+        }
     }
 
     IEnumerator FadeToColor(Color c, float time) {
