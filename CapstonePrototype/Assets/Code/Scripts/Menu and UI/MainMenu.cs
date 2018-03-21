@@ -6,7 +6,17 @@ public class MainMenu : MonoBehaviour {
 	public GameObject optionsMenu;
 	public GameObject creditsMenu;
 
-	public void NewGamePressed()
+    public void AIPressed() {
+        PlayerPrefs.SetInt("IS_AI", 1);
+        UnityEngine.SceneManagement.SceneManager.LoadScene("Game_Scene");
+    }
+
+    public void PlayPressed() {
+        PlayerPrefs.SetInt("IS_AI", 0);
+        UnityEngine.SceneManagement.SceneManager.LoadScene("Game_Scene");
+    }
+
+    public void NewGamePressed()
 	{
 		SwapToMenu(newGameMenu);
 	}

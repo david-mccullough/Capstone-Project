@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -31,6 +32,7 @@ public class GameController : MonoBehaviour {
 
     private int turnIndex = 0;
     private bool gameOver = false;
+    private bool isThinking = false;
 
     private MapGenerator mapGen;
     private Map map;
@@ -40,7 +42,6 @@ public class GameController : MonoBehaviour {
     public event Action<Faction> winEvent;
 
     void Start() {
-                
         InitGame();
 
         // Get references for event listening
@@ -50,12 +51,14 @@ public class GameController : MonoBehaviour {
             u.turnCompleteEvent += OnUnitTurnComplete;
         }
 
-        ui.InitUI();
+        if (ui != null) {
+            ui.InitUI();
+        }
     }
 
     void InitGame() {
 
-        mapGen = GetComponent<MapGenerator>();
+        mapGen = GameObject.Find("MapManager").GetComponent<MapGenerator>();
         System.Random prng = new System.Random();
         map = mapGen.GenerateMap(activeFactions.ToArray(), prng.Next(100,200));
         currentFaction = activeFactions[turnIndex];
@@ -74,6 +77,8 @@ public class GameController : MonoBehaviour {
         activeFactions[0].FactionDeactivateEvent += OnFactionDeactivate;
         activeFactions[1].FactionDeactivateEvent += OnFactionDeactivate;
 
+        activeFactions[1].SetAI(PlayerPrefs.GetInt("IS_AI", 1) == 1);
+
         //create path queue object
         drawPathStack = new Stack<Node>();
     }
@@ -83,7 +88,8 @@ public class GameController : MonoBehaviour {
     }
 
     public void EndGame() {
-        Application.Quit();
+        //Application.Quit();
+        UnityEngine.SceneManagement.SceneManager.LoadScene("Menu");
     }
 
     void Update() {
@@ -97,11 +103,15 @@ public class GameController : MonoBehaviour {
                 if (selectedUnit == null) {
                     state = ControllerState.idle;
                 }
-                DrawPath();
+                else {
+                    DrawPath();
+                }
             break;
 
             case ControllerState.ai:
-                state = ControllerState.idle;
+                if (!isThinking) {
+                    state = ControllerState.idle;
+                }
             break;
         }
         
@@ -160,18 +170,28 @@ public class GameController : MonoBehaviour {
         // Announce we have changed turns
         //currentFaction = newFaction;
         nextTurnEvent(currentFaction);
-        Debug.Log("FACTION" + currentFaction.name);
+        Debug.Log("Next faction: " + currentFaction.name);
 
         if (currentFaction.IsAI()) {
-            Unit u = currentFaction.GetUnits()[0]; //For now, just select one and only unit
-            SelectUnit(u);
-            AIController.Default.SetUnit(u);
-            var path = AIController.Default.MakeDecision(aiSkill);
-            selectedUnit.SetPath(path);
-            state = ControllerState.ai;
+            StartCoroutine(ProcessAI());
         }
 
         return currentFaction;
+    }
+    
+    IEnumerator ProcessAI() {
+        isThinking = true;
+        state = ControllerState.ai;
+        yield return new WaitForSeconds(.5f);
+        Unit u = currentFaction.GetUnits()[0]; //For now, just select one and only unit
+        SelectUnit(u);
+        AIController.Default.SetUnit(u);
+        
+        yield return new WaitForSeconds(UnityEngine.Random.Range(.75f, 1.5f));
+
+        var path = AIController.Default.MakeDecision(aiSkill);
+        selectedUnit.SetPath(path);
+        isThinking = false;
     }
 
     private void OnUnitTurnComplete() {
@@ -340,11 +360,13 @@ public class GameController : MonoBehaviour {
                     map.MakeTilesAvailable(u.coordOptions);
                 }
 
-                //queue unit's position to drawPath
-                drawPathStack.Clear();
-                drawPathStack.Push(map.nodes[u.pos.x,u.pos.y]);
-                //map.tiles[u.pos.x, u.pos.y].Highlight(true);
-                state = ControllerState.drawing;
+                if (state != ControllerState.ai) {
+                    //queue unit's position to drawPath
+                    drawPathStack.Clear();
+                    drawPathStack.Push(map.nodes[u.pos.x, u.pos.y]);
+                    //map.tiles[u.pos.x, u.pos.y].Highlight(true);
+                    state = ControllerState.drawing;
+                }
             }
         }
     }

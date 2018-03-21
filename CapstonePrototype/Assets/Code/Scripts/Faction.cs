@@ -61,6 +61,10 @@ public class Faction {
         return IS_AI;
     }
 
+    public void SetAI(bool val) {
+        IS_AI = val;
+    }
+
     public bool IsActive() {
         return isActive;
     }
