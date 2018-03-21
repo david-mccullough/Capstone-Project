@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class ClickableTile : MonoBehaviour {
 
@@ -77,7 +76,7 @@ public class ClickableTile : MonoBehaviour {
 
     public void SetOwner(Faction faction) {
         owner = faction;
-        StartCoroutine(FadeToColor(faction.color, .02f));
+        StartCoroutine(FadeToColor(faction.color, .03f));
     }
 
     public void SetAvailability(bool boolean) {

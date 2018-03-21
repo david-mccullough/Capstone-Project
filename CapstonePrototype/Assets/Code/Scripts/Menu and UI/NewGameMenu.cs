@@ -15,5 +15,5 @@ public class NewGameMenu : MonoBehaviour {
 		mainMenu.SetActive(true);
 		gameObject.SetActive(false);
 	}
-		
+
 }
