@@ -40,6 +40,7 @@ public class ClickableTile : MonoBehaviour {
                 ClickableTile tempTile = map.tiles[c.x, c.y];
                 tempTile.SetOwner(faction);
                 tempTile.SetValue(1);
+                map.audioSource.Play();
             }
             return true;
         }
@@ -83,7 +84,7 @@ public class ClickableTile : MonoBehaviour {
 
     public void SetOwner(Faction faction) {
         owner = faction;
-        StartCoroutine(FadeToColor(faction.color, .03f));
+        StartCoroutine(FadeToColor(faction.color, .07f));
         myColor = faction.color;
     }
 
@@ -138,11 +139,17 @@ public class ClickableTile : MonoBehaviour {
             Renderer rend = top.gameObject.GetComponent<Renderer>();
             if (boolean) {
                 Color tempColor = drawColor + myColor;
-                StartCoroutine(FadeToColor(tempColor, time));
+                //StartCoroutine(FadeToColor(tempColor, time));
+                foreach (Renderer r in renderers) {
+                    r.material.color = tempColor;
+                }
                 isDrawHighlighted = true;
             }
             else {
-                StartCoroutine(FadeToColor(myColor, time));
+                //StartCoroutine(FadeToColor(myColor, time));
+                foreach (Renderer r in renderers) {
+                    r.material.color = myColor;
+                }
                 isDrawHighlighted = false;
             }
         }

@@ -11,6 +11,7 @@ public class Map {
     public Node[,] nodes;
     public ClickableTile[,] tiles; //tilePrefabs with ClickableTile script
     public Graph graph;
+    public AudioSource audioSource;
 
     [Range(0, 1)]
     public float obstaclePercent;

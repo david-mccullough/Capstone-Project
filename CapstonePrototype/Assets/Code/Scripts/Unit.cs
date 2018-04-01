@@ -27,6 +27,7 @@ public class Unit : MonoBehaviour {
     float Y_POS = 1.25f;
 
     private Renderer rend;
+    public AudioClip sndSlide;
 
     // Declare Delegates
     public delegate void PathCompleteDelegate();
@@ -153,6 +154,8 @@ public class Unit : MonoBehaviour {
             return;
         }
 
+        map.audioSource.PlayOneShot(sndSlide);
+
         // Teleport us to our correct "current" position, in case we
         // haven't finished the animation yet.
         transform.position = map.TileCoordToWorldCoord(pos, Y_POS);
@@ -238,6 +241,10 @@ public class Unit : MonoBehaviour {
         var currentTile = map.tiles[pos.x, pos.y];
         currentTile.SetOccupationStatus(false);
         rend.enabled = false;
+    }
+
+    public void UpdateMoveSpeed() {
+        SetMoveSpeed(map.GetTileValue(pos));
     }
 
     public int GetMoveSpeed() {

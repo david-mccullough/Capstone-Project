@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 enum UIPrefabs {
@@ -16,6 +14,8 @@ public class GameUI : MonoBehaviour {
     private TextMesh turnTextMesh;
     private float turnTextSize;
 
+    public RectTransform winPanel;
+
     public Text debugText;
 
     [Header("Prefabs")]
@@ -25,6 +25,7 @@ public class GameUI : MonoBehaviour {
 
         controller.nextTurnEvent += OnNewTurn;
         controller.winEvent += OnWin;
+        controller.pauseEvent += OnPause;
         turnTextMesh = GetComponentInChildren<TextMesh>();
         turnTextSize = turnTextMesh.characterSize;
         OnNewTurn(controller.GetCurrentFaction());
@@ -51,14 +52,27 @@ public class GameUI : MonoBehaviour {
         c.a = .5f;
         turnTextMesh.GetComponent<Renderer>().material.SetColor("_Color", c);
     }
-    
+
     void OnWin(Faction faction) {
         turnTextMesh.characterSize *= 1.04f;
         turnTextMesh.text = faction.name + " WINS";
         Color c = faction.color;
         c.a = .5f;
         turnTextMesh.GetComponent<Renderer>().material.SetColor("_Color", c);
+
+        winPanel.gameObject.SetActive(true);
+        winPanel.GetComponentInChildren<Text>().text = faction.name + " wins.";
+        winPanel.FindChild("RestartButton").GetComponentInChildren<Text>().text = "Play Again";
     }
 
+    void OnPause() {
+        Debug.Log(!winPanel.gameObject.activeSelf);
+        winPanel.gameObject.SetActive(!winPanel.gameObject.activeSelf);
+
+        if (winPanel.gameObject.activeSelf) {
+            winPanel.GetComponentInChildren<Text>().text = "Paused";
+            winPanel.FindChild("RestartButton").GetComponentInChildren<Text>().text = "Restart Game";
+        }
+    }
 	
 }

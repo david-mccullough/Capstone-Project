@@ -124,6 +124,12 @@ public class AIController {
             Debug.Log("Chose " + index + " best option.");
             path = sortedPaths[index].Key;
         }
+
+        for(int i=1; i < path.Count; i++) {
+            map.tiles[path[i].pos.x, path[i].pos.y].DrawHighlight(true, .001f);
+        }
+
+        Debug.Log(Time.deltaTime);
         return path;
     }
 

@@ -40,6 +40,13 @@ public class GameController : MonoBehaviour {
     // Create event actions
     public event Action<Faction> nextTurnEvent;
     public event Action<Faction> winEvent;
+    public event Action pauseEvent;
+
+    public AudioSource audioSource;
+    [SerializeField]
+    private AudioClip sndClickUp;
+    [SerializeField]
+    private AudioClip sndClickDown;
 
     void Start() {
         InitGame();
@@ -54,6 +61,8 @@ public class GameController : MonoBehaviour {
         if (ui != null) {
             ui.InitUI();
         }
+
+        
     }
 
     void InitGame() {
@@ -66,6 +75,7 @@ public class GameController : MonoBehaviour {
 
         ui = FindObjectOfType<GameUI>();
         AIController.Default.SetMap(map);
+        
 
         /*foreach (Faction f in activeFactions) {
             f.FactionDeactivateEvent += OnFactionDeactivate;
@@ -81,6 +91,10 @@ public class GameController : MonoBehaviour {
 
         //create path queue object
         drawPathStack = new Stack<Node>();
+
+        //Load sounds
+        /*AudioClip sndClickDown = (AudioClip)Resources.Load<AudioClip>("clickDown");
+        AudioClip sndClickUp = (AudioClip)Resources.Load<AudioClip>("clickUp");*/
     }
 
     public void RestartGame() {
@@ -90,6 +104,10 @@ public class GameController : MonoBehaviour {
     public void EndGame() {
         //Application.Quit();
         UnityEngine.SceneManagement.SceneManager.LoadScene("Menu");
+    }
+
+    public void PauseGame() {
+        pauseEvent();
     }
 
     void Update() {
@@ -262,8 +280,12 @@ public class GameController : MonoBehaviour {
                         ClickableTile tile = map.tiles[popped.pos.x, popped.pos.y].GetComponent<ClickableTile>();
                         Debug.Log(tile.GetValue());
                         tile.DrawHighlight(false, .01f);
-                        
                         tile.SetValueText(tile.GetValue());
+
+                        audioSource.volume = .4f;
+                        audioSource.pitch = 1.9f;
+                        audioSource.clip = sndClickUp;
+                        audioSource.Play();                        
 
                         //adjust available tiles
                         var coordOptions = selectedUnit.GetAvailableTileOptions(tempNode, selectedUnit.GetMoveSpeed() - drawPathStack.Count+ 1);
@@ -294,6 +316,11 @@ public class GameController : MonoBehaviour {
                             //highlight tempTile? show its part of path
                             tempTile.DrawHighlight(true, .02f);
                             tempTile.SetValueText(tempTile.GetValue() + drawPathStack.Count-1);
+
+                            audioSource.volume = .95f;
+                            audioSource.pitch = (((float)drawPathStack.Count - 1f) / (float)selectedUnit.GetMoveSpeed())*.1f + .9f;
+                            audioSource.clip = sndClickDown;
+                            audioSource.Play();
                         }
                     }
                 }
@@ -349,6 +376,7 @@ public class GameController : MonoBehaviour {
                 // hold refernece for current unit
                 selectedUnit = u;
                 // Get the frontier of available move options...
+                u.UpdateMoveSpeed();
                 selectedUnit.coordOptions = u.GetAvailableTileOptions(map.nodes[u.pos.x, u.pos.y], u.GetRemainingMoves()).ToArray();
 
                 // ...and make those tiles walkable
