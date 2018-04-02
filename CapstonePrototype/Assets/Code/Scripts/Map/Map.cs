@@ -10,7 +10,10 @@ public class Map {
     public int maxTileValue;
     public Node[,] nodes;
     public ClickableTile[,] tiles; //tilePrefabs with ClickableTile script
+    public ClickableTile[] tilesOneD;
     public Graph graph;
+    public bool isTraining;
+    public bool instantMoves;
     public AudioSource audioSource;
 
     [Range(0, 1)]

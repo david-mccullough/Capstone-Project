@@ -162,4 +162,25 @@ public class AIController {
         value = numCapturedTiles - resultingValue;
         return value;
     }
+
+    //this is temprary for NN
+    public List<Node> MakeWorstDecision() {
+        ProcessInformation();
+        List<Node> path = null;
+
+        int index = 0;
+        int pathsCount = sortedPaths.Count - 1;
+
+        if (sortedPaths.Count > 0) {
+            index = pathsCount;
+            Debug.Log("Chose worst option.");
+            path = sortedPaths[index].Key;
+        }
+
+        for (int i = 1; i < path.Count; i++) {
+            map.tiles[path[i].pos.x, path[i].pos.y].DrawHighlight(true, .001f);
+        }
+
+        return path;
+    }
 }

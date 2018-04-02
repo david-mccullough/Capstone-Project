@@ -58,8 +58,6 @@ public class Unit : MonoBehaviour {
         //tempMaterial.color = faction.color;
         rend.material.color = faction.color;
 
-        Debug.Log("inited");
-
         map.tiles[pos.x, pos.y].SetOccupationStatus(true);
         faction.AddUnit(this);
     }
@@ -93,7 +91,12 @@ public class Unit : MonoBehaviour {
         }
 
         // Smoothly animate towards the correct map tile.
-        transform.position = Vector3.Lerp(transform.position, map.TileCoordToWorldCoord(pos, Y_POS), 5f * Time.deltaTime);
+        if (!map.instantMoves) {
+            transform.position = Vector3.Lerp(transform.position, map.TileCoordToWorldCoord(pos, Y_POS), 5f * Time.deltaTime);
+        }
+        else {
+            transform.position = map.TileCoordToWorldCoord(pos, Y_POS);
+        }
     }
 
     public List<Map.Coord> GetAvailableTileOptions(Node pos, int distance) {
@@ -245,6 +248,7 @@ public class Unit : MonoBehaviour {
 
     public void UpdateMoveSpeed() {
         SetMoveSpeed(map.GetTileValue(pos));
+        remainingMovement = moveSpeed;
     }
 
     public int GetMoveSpeed() {

@@ -68,6 +68,7 @@ public class MapGenerator: MonoBehaviour {
         Transform mapHolder = new GameObject(holderName).transform;
         mapHolder.parent = transform;
 
+        int k = 0;
         List<Transform> tileTransforms = new List<Transform>(currentMap.size.x * currentMap.size.y);
         // Create tiles
         for (int x = 0; x < currentMap.size.x; x++) {
@@ -84,12 +85,14 @@ public class MapGenerator: MonoBehaviour {
 
                 ClickableTile ct = newTile.GetComponent<ClickableTile>();
                 currentMap.tiles[x, y] = ct;
+                currentMap.tilesOneD[k++] = ct;
                 ct.pos = new Map.Coord(x, y);
 
                 ct.SetValue((int)prng.Next(1,currentMap.maxTileValue));
                 ct.map = currentMap;
             }
         }
+        //currentMap.tilesOneD = Utility.TwoDToOneDArray(currentMap.tiles) as ClickableTile[];
         currentMap.graph = new Graph(tileTransforms.ToArray(), currentMap.size.x, GraphFunctionName.Ripple);
 
         #region Obstacle Generation
@@ -135,6 +138,11 @@ public class MapGenerator: MonoBehaviour {
             if (newUnit != null) {
                 newUnit.Init(currentMap, origin, factions[i]);
                 newUnit.transform.parent = mapHolder;
+
+                //if we are training neural nets, add a brain!
+                if (currentMap.isTraining) {
+                    newUnit.gameObject.AddComponent<AIAgent>();
+                }
             }
         }
 

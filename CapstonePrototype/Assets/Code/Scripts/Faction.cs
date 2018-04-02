@@ -48,7 +48,7 @@ public class Faction {
     }
 
     public void RemoveUnit(Unit unit) {
-        Debug.Log("removing unit");
+        //Debug.Log("removing unit");
         //myUnits.Remove(unit);
         numActiveUnits--;
         if (numActiveUnits <= 0) {

@@ -48,6 +48,7 @@ public class GameController : MonoBehaviour {
     [SerializeField]
     private AudioClip sndClickDown;
 
+
     void Start() {
         InitGame();
 
@@ -62,6 +63,10 @@ public class GameController : MonoBehaviour {
             ui.InitUI();
         }
 
+        if (map.isTraining) {
+            GameObject.Find("NeuralManager").GetComponent<NeuralNetworkManager>().StartTraining();
+            NextFaction();
+        }
         
     }
 
@@ -69,9 +74,10 @@ public class GameController : MonoBehaviour {
 
         mapGen = GameObject.Find("MapManager").GetComponent<MapGenerator>();
         System.Random prng = new System.Random();
-        map = mapGen.GenerateMap(activeFactions.ToArray(), prng.Next(100,200));
+        map = mapGen.GenerateMap(activeFactions.ToArray(), prng.Next(0,500));
         currentFaction = activeFactions[turnIndex];
         uiText.text = currentFaction.name + " turn (" + turnIndex + ").";
+        
 
         ui = FindObjectOfType<GameUI>();
         AIController.Default.SetMap(map);
@@ -95,6 +101,8 @@ public class GameController : MonoBehaviour {
         //Load sounds
         /*AudioClip sndClickDown = (AudioClip)Resources.Load<AudioClip>("clickDown");
         AudioClip sndClickUp = (AudioClip)Resources.Load<AudioClip>("clickUp");*/
+
+        
     }
 
     public void RestartGame() {
@@ -138,6 +146,9 @@ public class GameController : MonoBehaviour {
 
     // Advances game to next faction's turn, returns new current faction
     public Faction NextFaction() {
+        if (gameOver) {
+            return null;
+        }
         /*Faction newFaction;
         if (numActiveFactions > 2) {
 
@@ -188,7 +199,7 @@ public class GameController : MonoBehaviour {
         // Announce we have changed turns
         //currentFaction = newFaction;
         nextTurnEvent(currentFaction);
-        Debug.Log("Next faction: " + currentFaction.name);
+        //Debug.Log("Next faction: " + currentFaction.name);
 
         if (currentFaction.IsAI()) {
             StartCoroutine(ProcessAI());
@@ -198,25 +209,41 @@ public class GameController : MonoBehaviour {
     }
     
     IEnumerator ProcessAI() {
-        isThinking = true;
-        state = ControllerState.ai;
-        yield return new WaitForSeconds(.5f);
-        Unit u = currentFaction.GetUnits()[0]; //For now, just select one and only unit
-        SelectUnit(u);
-        AIController.Default.SetUnit(u);
-        
-        yield return new WaitForSeconds(UnityEngine.Random.Range(.75f, 1.5f));
+        if (map.isTraining) {
+            isThinking = true;
+            state = ControllerState.ai;
+            Unit u = currentFaction.GetUnits()[0]; //For now, just select one and only unit
+            SelectUnit(u);
+            AIController.Default.SetUnit(u);
 
-        var path = AIController.Default.MakeDecision(aiSkill);
-        selectedUnit.SetPath(path);
-        isThinking = false;
+            yield return new WaitForSeconds(.01f);
+
+            var path = u.gameObject.GetComponent<AIAgent>().MakeDecision();
+            selectedUnit.SetPath(path);
+            isThinking = false;
+        }
+        else {
+            isThinking = true;
+            state = ControllerState.ai;
+            yield return new WaitForSeconds(.5f);
+            Unit u = currentFaction.GetUnits()[0]; //For now, just select one and only unit
+            SelectUnit(u);
+            AIController.Default.SetUnit(u);
+
+            yield return new WaitForSeconds(UnityEngine.Random.Range(.75f, 1.5f));
+
+            var path = AIController.Default.MakeDecision(aiSkill);
+            selectedUnit.SetPath(path);
+            isThinking = false;
+        }
+        
     }
 
     private void OnUnitTurnComplete() {
         // TODO a unit has completed its turn
         // we must either yield control the next faction's turn
         // or update the current unit (actaully just deselect it for expediency sake)
-        if (true) {
+        if (!gameOver) {
             DeselectUnit();
             NextFaction();
         }
