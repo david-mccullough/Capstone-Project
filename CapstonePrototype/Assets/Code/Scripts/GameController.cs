@@ -247,6 +247,7 @@ public class GameController : MonoBehaviour {
             DeselectUnit();
             NextFaction();
         }
+        
     }
 
     void OnFactionDeactivate() {
